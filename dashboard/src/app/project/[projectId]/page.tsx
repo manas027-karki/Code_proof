@@ -42,6 +42,192 @@ type ReportsResponse = {
   reports: ReportSummary[];
 };
 
+type RiskTotals = {
+  totalFindings: number;
+  totalBlocked: number;
+  totalWarnings: number;
+  highRisk: number;
+};
+
+type RiskPieChartProps = {
+  totals: RiskTotals;
+};
+
+function polarToCartesian(
+  centerX: number,
+  centerY: number,
+  radius: number,
+  angleInDegrees: number,
+) {
+  const angleInRadians = ((angleInDegrees - 90) * Math.PI) / 180.0;
+
+  return {
+    x: centerX + radius * Math.cos(angleInRadians),
+    y: centerY + radius * Math.sin(angleInRadians),
+  };
+}
+
+function describeArc(
+  x: number,
+  y: number,
+  radius: number,
+  startAngle: number,
+  endAngle: number,
+) {
+  const start = polarToCartesian(x, y, radius, endAngle);
+  const end = polarToCartesian(x, y, radius, startAngle);
+
+  const largeArcFlag = endAngle - startAngle <= 180 ? "0" : "1";
+
+  return [
+    "M",
+    start.x,
+    start.y,
+    "A",
+    radius,
+    radius,
+    0,
+    largeArcFlag,
+    0,
+    end.x,
+    end.y,
+  ].join(" ");
+}
+
+function RiskPieChart({ totals }: RiskPieChartProps) {
+  const { totalFindings, totalBlocked, totalWarnings, highRisk } = totals;
+
+  if (totalFindings === 0) {
+    return (
+      <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-6 text-sm text-slate-500">
+        No findings recorded yet for this project.
+      </div>
+    );
+  }
+
+  const remaining = Math.max(
+    totalFindings - highRisk - totalWarnings,
+    0,
+  );
+
+  const slices = [
+    { label: "High-Risk", value: highRisk, color: "#f97373" },
+    { label: "Warnings", value: totalWarnings, color: "#fbbf24" },
+    { label: "Other", value: remaining, color: "#cbd5f5" },
+  ].filter((item) => item.value > 0);
+
+  const total = slices.reduce((sum, item) => sum + item.value, 0);
+  const center = 60;
+  const radius = 46;
+  let currentAngle = 0;
+
+  return (
+    <div className="flex flex-col gap-6 rounded-2xl border border-slate-200/70 bg-white p-6 shadow-sm">
+      <div className="flex flex-col gap-2">
+        <h3 className="text-sm font-semibold text-slate-900">
+          Risk distribution
+        </h3>
+        <p className="text-xs text-slate-500">
+          Breakdown of blocked, warning, and other findings for this project.
+        </p>
+      </div>
+      <div className="flex flex-wrap items-center gap-6">
+        <div className="relative h-32 w-32">
+          <svg
+            viewBox="0 0 120 120"
+            className="h-full w-full transition-transform duration-300 ease-out hover:scale-[1.03]"
+          >
+            {/* Background ring */}
+            <circle
+              cx={center}
+              cy={center}
+              r={radius}
+              fill="none"
+              stroke="#e2e8f0"
+              strokeWidth={10}
+            />
+            {slices.map((slice, index) => {
+              const sliceAngle = (slice.value / total) * 360;
+              const startAngle = currentAngle;
+              const endAngle = currentAngle + sliceAngle;
+              currentAngle = endAngle;
+
+              const pathData = describeArc(
+                center,
+                center,
+                radius,
+                startAngle,
+                endAngle,
+              );
+
+              return (
+                <path
+                  key={slice.label}
+                  d={pathData}
+                  fill="none"
+                  stroke={slice.color}
+                  strokeWidth={10}
+                  className="transition-all duration-500 ease-out"
+                  strokeLinecap="round"
+                />
+              );
+            })}
+          </svg>
+          <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center">
+            <div className="text-[0.65rem] font-semibold uppercase tracking-[0.2em] text-slate-400">
+              Total findings
+            </div>
+            <div className="text-lg font-semibold text-slate-900">
+              {totalFindings}
+            </div>
+          </div>
+        </div>
+        <div className="flex-1 space-y-3 text-xs text-slate-600">
+          <div className="grid gap-2 sm:grid-cols-2">
+            <div className="flex items-center justify-between gap-2 rounded-xl bg-rose-50/60 px-3 py-2">
+              <span className="flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full bg-rose-500" />
+                <span className="font-semibold text-rose-700">
+                  Total Blocked Commits
+                </span>
+              </span>
+              <span className="font-mono text-xs text-rose-700">
+                {totalBlocked}
+              </span>
+            </div>
+            <div className="flex items-center justify-between gap-2 rounded-xl bg-amber-50/70 px-3 py-2">
+              <span className="flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full bg-amber-400" />
+                <span className="font-semibold text-amber-700">
+                  Total Warnings
+                </span>
+              </span>
+              <span className="font-mono text-xs text-amber-700">
+                {totalWarnings}
+              </span>
+            </div>
+          </div>
+          <div className="flex items-center justify-between gap-2 rounded-xl bg-slate-50 px-3 py-2">
+            <span className="flex items-center gap-2">
+              <span className="h-2 w-2 rounded-full bg-rose-500" />
+              <span className="font-semibold text-slate-800">
+                High-Risk Findings
+              </span>
+            </span>
+            <span className="font-mono text-xs text-slate-700">
+              {highRisk}
+            </span>
+          </div>
+          <p className="text-[0.7rem] text-slate-500">
+            Percentages are calculated out of total findings across the loaded
+            reports for this project.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 const PAGE_LIMIT = 50;
 const MAX_REPORTS = 200;
 
@@ -189,6 +375,28 @@ export default function ProjectMetricsPage() {
     ];
   }, [reports, isTruncated]);
 
+  const riskTotals = useMemo<RiskTotals>(() => {
+    const totalFindings = reports.reduce(
+      (sum, report) => sum + report.summary.findings,
+      0,
+    );
+    const totalBlocked = reports.reduce(
+      (sum, report) => sum + report.summary.blocks,
+      0,
+    );
+    const totalWarnings = reports.reduce(
+      (sum, report) => sum + report.summary.warnings,
+      0,
+    );
+
+    return {
+      totalFindings,
+      totalBlocked,
+      totalWarnings,
+      highRisk: totalBlocked,
+    };
+  }, [reports]);
+
   const trendData = useMemo(() => {
     if (reports.length === 0) {
       return [];
@@ -275,6 +483,17 @@ export default function ProjectMetricsPage() {
         ) : (
           <MetricsGrid items={metrics} />
         )}
+
+        <SectionCard
+          title="Risk overview"
+          description="How blocked commits and warnings contribute to overall findings for this project."
+        >
+          {isLoading ? (
+            <div className="h-40 rounded-2xl border border-slate-200/70 bg-slate-100" />
+          ) : (
+            <RiskPieChart totals={riskTotals} />
+          )}
+        </SectionCard>
 
         <SectionCard
           title="Historical trends"
