@@ -1,4 +1,5 @@
 "use client";
+export const dynamic = "force-dynamic";
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
@@ -32,7 +33,7 @@ export default function LoginPage() {
     setIsSubmitting(true);
 
     try {
-      console.log("first")
+      console.log("first");
       const response = await fetch(
         new URL("/api/auth/login", config.apiUrl).toString(),
         {
@@ -42,31 +43,36 @@ export default function LoginPage() {
         },
       );
 
-      console.log("second")
+      console.log("second");
       console.log(response);
 
       const rawText = await response.text();
-      const data = rawText ? (JSON.parse(rawText) as LoginResponse & { error?: string }) : null;
+      const data = rawText
+        ? (JSON.parse(rawText) as LoginResponse & { error?: string })
+        : null;
 
       if (!response.ok || !data?.accessToken) {
-        const message = data?.message ?? data?.error ?? rawText ?? "Login failed. Please try again.";
+        const message =
+          data?.message ??
+          data?.error ??
+          rawText ??
+          "Login failed. Please try again.";
         setError(message);
-        console.error("Login failed", { status: response.status, body: rawText });
+        console.error("Login failed", {
+          status: response.status,
+          body: rawText,
+        });
         return;
       }
 
       const payload = decodeJwtPayload(data.accessToken);
-      const expires = payload?.exp
-        ? new Date(payload.exp * 1000)
-        : undefined;
+      const expires = payload?.exp ? new Date(payload.exp * 1000) : undefined;
 
       setToken(data.accessToken, expires ? { expires } : undefined);
       router.replace(nextPath);
     } catch (err) {
       setError(
-        err instanceof Error
-          ? err.message
-          : "Login failed. Please try again.",
+        err instanceof Error ? err.message : "Login failed. Please try again.",
       );
     } finally {
       setIsSubmitting(false);
