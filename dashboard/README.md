@@ -4,6 +4,12 @@ CodeProof dashboard foundation built with Next.js App Router, TypeScript, and Ta
 
 1. Configure environment variables in `.env.local`:
 
+For production:
+```
+NEXT_PUBLIC_API_URL=https://code-proof.onrender.com
+```
+
+For local development:
 ```
 NEXT_PUBLIC_API_URL=http://localhost:4000
 ```
