@@ -16,7 +16,7 @@ pickle_in_2 = open("vectorizer.pkl", "rb")
 vectorizer = pickle.load(pickle_in_2)
 
 @app.post('/predict')
-def API_Risk(text: str = Body(...,
+def Sceret_Scan(text: str = Body(...,
         media_type="text/plain",
         title="Enter Text",
         description="Paste your message here"
