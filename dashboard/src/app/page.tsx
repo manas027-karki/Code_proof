@@ -70,8 +70,7 @@ const features = [
   },
   {
     title: "Safe Secret Remediation",
-    description:
-      "Guided actions to rotate, revoke, and verify fixes quickly.",
+    description: "Guided actions to rotate, revoke, and verify fixes quickly.",
     icon: (
       <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
         <path
@@ -86,8 +85,7 @@ const features = [
   },
   {
     title: "Dashboard Analytics",
-    description:
-      "Understand risk trends, offenders, and remediation velocity.",
+    description: "Understand risk trends, offenders, and remediation velocity.",
     icon: (
       <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
         <path
@@ -129,77 +127,196 @@ export default function Home() {
       <Hero />
       <HowItWorks />
       <PricingSection />
-      <CliDocsSection />
-      <section id="features" className="mx-auto max-w-6xl px-6 py-20">
-        <div className="flex flex-col gap-3 text-center">
-          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">
-            Core features
-          </p>
-          <h2 className="text-2xl font-semibold text-slate-900 sm:text-3xl">
-            Enforcement with context, designed for security teams
-          </h2>
-          <p className="text-sm text-slate-600 sm:text-base">
-            A balance of automation and clarity so developers can fix issues fast.
-          </p>
-        </div>
-        <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {features.map((feature) => (
-            <FeatureCard key={feature.title} {...feature} />
-          ))}
-        </div>
-      </section>
-      <section className="mx-auto max-w-6xl px-6 pb-20">
-        <div className="rounded-3xl border border-slate-200/70 bg-white p-8 shadow-sm sm:p-10">
-          <div className="flex flex-col gap-3 text-center">
-            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">
-              Security philosophy
-            </p>
-            <h2 className="text-2xl font-semibold text-slate-900 sm:text-3xl">
-              Built to earn trust, not just detect problems
+      {/* <CliDocsSection /> */}
+      <>
+        <style>{`
+          @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap');
+
+          .feat-title {
+            font-family: 'Cormorant Garamond', Georgia, serif;
+            font-weight: 300;
+            font-size: clamp(1.8rem, 4vw, 2.8rem);
+            line-height: 1.08;
+            letter-spacing: -0.02em;
+            color: #0f172a;
+          }
+          .feat-title em {
+            font-style: italic;
+            font-weight: 400;
+            background: linear-gradient(130deg, #1d6ef5 0%, #06b6d4 55%, #059669 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+          }
+
+          .feat-card {
+            background: rgba(255,255,255,0.70);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 1px solid rgba(0,0,0,0.07);
+            box-shadow: 0 2px 16px rgba(0,0,0,0.05), inset 0 1px 0 rgba(255,255,255,0.9);
+            transition: box-shadow 0.22s ease, transform 0.22s ease;
+            min-width: 0;
+            box-sizing: border-box;
+          }
+          .feat-card:hover {
+            box-shadow: 0 6px 28px rgba(0,0,0,0.09), inset 0 1px 0 rgba(255,255,255,0.9);
+            transform: translateY(-2px);
+          }
+
+          .feat-icon-wrap {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, rgba(29,110,245,0.10) 0%, rgba(5,150,105,0.10) 100%);
+            border: 1px solid rgba(29,110,245,0.12);
+            flex-shrink: 0;
+            color: #1d6ef5;
+          }
+
+          /* Security philosophy outer card */
+          .sec-card {
+            background: rgba(255,255,255,0.65);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+            border: 1px solid rgba(0,0,0,0.07);
+            box-shadow: 0 2px 20px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.95);
+            min-width: 0;
+            box-sizing: border-box;
+          }
+
+          /* Security inner items */
+          .sec-item {
+            background: rgba(255,255,255,0.55);
+            border: 1px solid rgba(0,0,0,0.06);
+            box-shadow: 0 1px 6px rgba(0,0,0,0.03), inset 0 1px 0 rgba(255,255,255,0.8);
+            min-width: 0;
+            box-sizing: border-box;
+            transition: box-shadow 0.2s ease, transform 0.2s ease;
+          }
+          .sec-item:hover {
+            box-shadow: 0 4px 16px rgba(0,0,0,0.07);
+            transform: translateY(-1px);
+          }
+
+          .sec-item-num {
+            font-family: 'Cormorant Garamond', serif;
+            font-style: italic;
+            font-size: 10px;
+            color: #94a3b8;
+            letter-spacing: 0.04em;
+            flex-shrink: 0;
+          }
+        `}</style>
+
+        {/* ── Features ── */}
+        <section
+          id="features"
+          className="mx-auto max-w-6xl px-6 py-20"
+          style={{ overflow: "hidden" }}
+        >
+          <div className="flex flex-col items-center gap-4 text-center">
+            <div
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "10px",
+                background: "rgba(255,255,255,0.78)",
+                backdropFilter: "blur(14px)",
+                border: "1px solid rgba(0,0,0,0.07)",
+                boxShadow:
+                  "0 1px 4px rgba(0,0,0,0.05), inset 0 1px 0 rgba(255,255,255,0.95)",
+                borderRadius: "100px",
+                padding: "5px 14px",
+              }}
+            >
+              <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                <path
+                  d="M5 0l1.12 3.88H10L6.94 6.28 8.09 10 5 7.64 1.91 10l1.15-3.72L0 3.88h3.88z"
+                  fill="#10b981"
+                />
+              </svg>
+              <span
+                style={{
+                  fontFamily: "'DM Sans',sans-serif",
+                  fontSize: "11px",
+                  fontWeight: 400,
+                  letterSpacing: "0.07em",
+                  color: "#64748b",
+                  textTransform: "uppercase",
+                }}
+              >
+                Core features
+              </span>
+              <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                <path
+                  d="M5 0l1.12 3.88H10L6.94 6.28 8.09 10 5 7.64 1.91 10l1.15-3.72L0 3.88h3.88z"
+                  fill="#10b981"
+                />
+              </svg>
+            </div>
+
+            <h2 className="feat-title">
+              Enforcement with <em>context,</em> designed for security teams
             </h2>
-            <p className="text-sm text-slate-600 sm:text-base">
-              CodeProof is designed around clear boundaries and minimal exposure.
+            <p
+              style={{
+                fontFamily: "'DM Sans',sans-serif",
+                fontWeight: 300,
+                fontSize: "14px",
+                color: "#64748b",
+                maxWidth: "32rem",
+                lineHeight: 1.7,
+              }}
+            >
+              A balance of automation and clarity so developers can fix issues
+              fast.
             </p>
           </div>
-          <div className="mt-8 grid gap-4 sm:grid-cols-2">
-            {[
-              {
-                title: "clientId is identity, not security",
-                description:
-                  "Identifiers help routing and reporting, but never replace authentication.",
-              },
-              {
-                title: "Fail-open design",
-                description:
-                  "Developers keep shipping while the system records degraded states.",
-              },
-              {
-                title: "No secrets stored in frontend",
-                description:
-                  "Sensitive content never lives inside the dashboard UI layer.",
-              },
-              {
-                title: "Authentication separate from ingestion",
-                description:
-                  "Event intake and user identity run on isolated control paths.",
-              },
-            ].map((item) => (
+
+          <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {features.map((feature) => (
               <div
-                key={item.title}
-                className="rounded-2xl border border-slate-200/70 bg-slate-50 p-5"
+                key={feature.title}
+                className="feat-card rounded-2xl p-5 flex flex-col gap-4"
               >
-                <h3 className="text-sm font-semibold text-slate-900">
-                  {item.title}
-                </h3>
-                <p className="mt-2 text-sm text-slate-600">
-                  {item.description}
-                </p>
+                <div className="feat-icon-wrap">{feature.icon}</div>
+                <div>
+                  <p
+                    style={{
+                      fontFamily: "'DM Sans',sans-serif",
+                      fontSize: "13.5px",
+                      fontWeight: 500,
+                      color: "#0f172a",
+                      letterSpacing: "-0.01em",
+                    }}
+                  >
+                    {feature.title}
+                  </p>
+                  <p
+                    style={{
+                      fontFamily: "'DM Sans',sans-serif",
+                      fontSize: "13px",
+                      fontWeight: 300,
+                      color: "#64748b",
+                      lineHeight: 1.6,
+                      marginTop: "6px",
+                    }}
+                  >
+                    {feature.description}
+                  </p>
+                </div>
               </div>
             ))}
           </div>
-        </div>
-      </section>
-      <section className="mx-auto max-w-6xl px-6 pb-20">
+        </section>
+
+        {/* ── Security philosophy ── */}
+      </>
+      {/* <section className="mx-auto max-w-6xl px-6 pb-20">
         <div className="flex flex-col gap-3 text-center">
           <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">
             Example metrics
@@ -216,7 +333,7 @@ export default function Home() {
             <MetricCard key={metric.label} {...metric} />
           ))}
         </div>
-      </section>
+      </section> */}
       <Footer />
     </main>
   );
