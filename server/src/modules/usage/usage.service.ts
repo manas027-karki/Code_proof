@@ -1,7 +1,7 @@
 import { UserModel, UserDocument } from "../../models/user.model";
 import { UsageSnapshot } from "./usage.model";
 
-const DEFAULT_FREE_LIMIT = 20;
+const DEFAULT_FREE_LIMIT = 50;
 
 const startOfMonth = (date: Date) =>
   new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), 1, 0, 0, 0, 0));

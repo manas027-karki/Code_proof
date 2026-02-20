@@ -27,7 +27,7 @@ const UserSchema = new Schema<UserDocument>(
     userId: { type: String, required: true, unique: true },
     linkedClientIds: { type: [String], required: true, default: [] },
     plan: { type: String, required: true, default: "free", enum: ["free", "premium"] },
-    monthlyLimit: { type: Number, required: true, default: 20 },
+    monthlyLimit: { type: Number, required: true, default: 50 },
     monthlyUsed: { type: Number, required: true, default: 0 },
     usageHistory: {
       type: [

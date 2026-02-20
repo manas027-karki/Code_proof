@@ -168,12 +168,17 @@ export async function runCli({ args = [], cwd }) {
                 logInfo("Syncing report to server...");
                 await withFailOpenIntegration(async () => {
                     // Network calls are fail-open; never affect exit codes.
-                    return await sendReportToServer(report, {
+                    const result = await sendReportToServer(report, {
                         enabled: true,
                         endpointUrl: integration.endpointUrl
                     });
+                    if (result && !result.success) {
+                        logWarn(`Failed to sync report: ${result.error || "Unknown error"}`);
+                    } else {
+                        logSuccess("Report synced to server.");
+                    }
+                    return result;
                 });
-                logSuccess("Report synced to server.");
             } else {
                 reportFeatureDisabled("Integration", verbose, logInfo);
             }

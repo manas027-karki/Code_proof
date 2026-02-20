@@ -22,7 +22,7 @@ export async function sendReportToServer(report, options = {}) {
     ? options.endpointUrl.trim()
     : DEFAULT_ENDPOINT;
 
-  // console.log("[API Client] Target endpoint:", endpointUrl);
+  console.log("[API Client] Sending report to:", endpointUrl);
   // console.log("[API Client] Report summary:", {
   //   projectId: report.projectId,
   //   clientId: report.clientId,
@@ -56,41 +56,57 @@ export async function sendReportToServer(report, options = {}) {
           timeout: 5000
         },
         (res) => {
-          // console.log("[API Client] Response received:", res.statusCode);
           let body = "";
           res.on("data", (chunk) => {
             body += chunk;
           });
           res.on("end", () => {
-            // console.log("[API Client] Response body:", body);
             if (res.statusCode === 201) {
               // Report sent successfully
+              resolve({ success: true, statusCode: res.statusCode });
             } else {
-              console.error("[API Client] Server returned status:", res.statusCode);
+              // Log error response for debugging
+              let errorMessage = `Server returned status ${res.statusCode}`;
+              try {
+                const errorData = body ? JSON.parse(body) : null;
+                if (errorData?.message) {
+                  errorMessage += `: ${errorData.message}`;
+                } else if (body) {
+                  errorMessage += `: ${body.substring(0, 200)}`;
+                }
+              } catch {
+                if (body) {
+                  errorMessage += `: ${body.substring(0, 200)}`;
+                }
+              }
+              console.error("[API Client]", errorMessage);
+              resolve({ success: false, statusCode: res.statusCode, error: errorMessage });
             }
-            resolve();
           });
           res.resume();
         }
       );
 
       request.on("timeout", () => {
-        console.error("[API Client] Request timeout");
+        const errorMsg = "Request timeout after 5s";
+        console.error("[API Client]", errorMsg);
         request.destroy();
-        resolve();
+        resolve({ success: false, error: errorMsg });
       });
 
       request.on("error", (err) => {
-        console.error("[API Client] Request error:", err.message);
-        resolve();
+        const errorMsg = `Request error: ${err.message}`;
+        console.error("[API Client]", errorMsg);
+        resolve({ success: false, error: errorMsg });
       });
 
       request.write(payload);
       request.end();
       // console.log("[API Client] Request sent");
     } catch (err) {
-      console.error("[API Client] Exception:", err.message);
-      resolve();
+      const errorMsg = `Exception: ${err.message}`;
+      console.error("[API Client]", errorMsg);
+      resolve({ success: false, error: errorMsg });
     }
   });
 }
