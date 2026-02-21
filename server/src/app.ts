@@ -22,10 +22,7 @@ export const createApp = (params: { env: EnvConfig; featureFlags: FeatureFlags }
 
   // Enable CORS for frontend
   app.use(cors({
-    origin: [
-      "https://code-proof.vercel.app",
-      "http://localhost:3000"
-    ],
+    origin: "*",
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],

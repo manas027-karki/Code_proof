@@ -63,7 +63,7 @@ export async function runInit({ cwd }) {
       },
       integration: {
         enabled: false,
-        endpointUrl: ""
+        endpointUrl: "https://code-proof.onrender.com/api/reports"
       },
       severityRules: {
         block: [],

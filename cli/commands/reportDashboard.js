@@ -40,24 +40,14 @@ export async function runReportDashboard({ cwd }) {
       return;
     }
 
-    const integration = config?.integration || {};
-    const integrationEnabled = features.integration && Boolean(integration.enabled);
-    
-    if (integrationEnabled) {
-      // Integrations are fail-open: never throw on network errors.
-      withFailOpenIntegration(() => {
-        sendReportToServer(latestReport, {
-          enabled: true,
-          endpointUrl: integration.endpointUrl
-        });
-      });
-      logInfo("Report sent to server.");
-    } else {
-      reportFeatureDisabled("Integration", verbose, logInfo);
-    }
+    // Integrations are fail-open: never throw on network errors.
+    withFailOpenIntegration(() => {
+      sendReportToServer(latestReport, { enabled: true });
+    });
+    logInfo("Report sent to server.");
 
     if (latestReport?.projectId) {
-      logInfo(`View dashboard: https://dashboard.codeproof.dev/project/${latestReport.projectId}`);
+      logInfo(`View dashboard: https://code-proof.vercel.app/project/${latestReport.projectId}`);
     }
   } else {
     reportFeatureDisabled("Reporting", verbose, logInfo);

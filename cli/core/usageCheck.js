@@ -1,7 +1,7 @@
 import http from "http";
 import https from "https";
 
-const DEFAULT_API_BASE = "http://127.0.0.1:4000/api";
+const DEFAULT_API_BASE = "https://code-proof.onrender.com/api";
 
 function resolveApiBase(config) {
   const envBase = typeof process.env.CODEPROOF_API_BASE === "string"

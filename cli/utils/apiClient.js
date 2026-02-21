@@ -4,7 +4,7 @@ import https from "https";
 // Boundary: integration layer only. Must not import CLI, rule engine, or reporting.
 // Network calls are fail-open to avoid impacting commits or developer flow.
 
-const DEFAULT_ENDPOINT = "http://127.0.0.1:4000/api/reports";
+const DEFAULT_ENDPOINT = "https://code-proof.onrender.com/api/reports";
 
 export async function sendReportToServer(report, options = {}) {
   const enabled = Boolean(options.enabled);
