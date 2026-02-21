@@ -606,17 +606,8 @@ export default function ProjectMetricsPage() {
       `}</style>
 
       <main className="proj-root">
-        <div className="mx-auto flex max-w-5xl flex-col gap-6 px-4 py-8 sm:px-6">
+        <div className="mx-auto flex max-w-5xl flex-col gap-6 px-0 py-20 sm:px-6">
           {/* Back button */}
-          <div>
-            <button
-              type="button"
-              className="proj-back-btn"
-              onClick={() => router.push("/dashboard")}
-            >
-              ← Dashboard
-            </button>
-          </div>
 
           {/* Project header */}
           {project && (

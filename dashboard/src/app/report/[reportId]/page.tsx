@@ -315,7 +315,7 @@ export default async function ReportPage({ params }: ReportPageProps) {
       `}</style>
 
       <main className="rp-root">
-        <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-8 sm:px-6">
+        <div className="mx-auto flex max-w-6xl flex-col gap-6 px-0 py-20 sm:px-6">
           {/* Back nav */}
           <div
             style={{
@@ -328,12 +328,6 @@ export default async function ReportPage({ params }: ReportPageProps) {
           >
             <Link href={`/project/${report.projectId}`} className="rp-back">
               ← Project
-            </Link>
-            <Link
-              href={`/project/${report.projectId}`}
-              className="rp-proj-link"
-            >
-              View project →
             </Link>
           </div>
 

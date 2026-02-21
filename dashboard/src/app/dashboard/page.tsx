@@ -397,7 +397,7 @@ export default function DashboardPage() {
       `}</style>
 
       <main className="dash-root">
-        <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-8 lg:flex-row sm:px-6">
+        <div className="mx-auto flex max-w-7xl flex-col gap-6 px-0 py-20 lg:flex-row sm:px-6">
           {/* ── Main content ── */}
           <section
             style={{
@@ -419,49 +419,7 @@ export default function DashboardPage() {
               }}
             >
               <div>
-                <div
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "8px",
-                    background: "rgba(255,255,255,0.78)",
-                    backdropFilter: "blur(14px)",
-                    border: "1px solid rgba(0,0,0,0.07)",
-                    boxShadow:
-                      "0 1px 4px rgba(0,0,0,0.05), inset 0 1px 0 rgba(255,255,255,0.95)",
-                    borderRadius: "100px",
-                    padding: "4px 12px",
-                    marginBottom: "12px",
-                  }}
-                >
-                  <svg width="8" height="8" viewBox="0 0 10 10" fill="none">
-                    <path
-                      d="M5 0l1.12 3.88H10L6.94 6.28 8.09 10 5 7.64 1.91 10l1.15-3.72L0 3.88h3.88z"
-                      fill="#10b981"
-                    />
-                  </svg>
-                  <span
-                    style={{
-                      fontFamily: "'DM Sans',sans-serif",
-                      fontSize: "10px",
-                      fontWeight: 400,
-                      letterSpacing: "0.07em",
-                      color: "#64748b",
-                      textTransform: "uppercase",
-                    }}
-                  >
-                    Dashboard
-                  </span>
-                  <svg width="8" height="8" viewBox="0 0 10 10" fill="none">
-                    <path
-                      d="M5 0l1.12 3.88H10L6.94 6.28 8.09 10 5 7.64 1.91 10l1.15-3.72L0 3.88h3.88z"
-                      fill="#10b981"
-                    />
-                  </svg>
-                </div>
-                <h1 className="dash-header-title">
-                  Security <em>overview</em>
-                </h1>
+                <h1 className="dash-header-title">DASHBOARD</h1>
                 <p
                   style={{
                     fontFamily: "'DM Sans',sans-serif",
