@@ -5,50 +5,201 @@ type UsageSummaryCardProps = {
   remaining: number;
 };
 
-const planStyles = {
-  free: "border-slate-200 bg-slate-100 text-slate-700",
-  premium: "border-emerald-200 bg-emerald-50 text-emerald-700",
-} as const;
-
 export default function UsageSummaryCard({
   plan,
   used,
   limit,
   remaining,
 }: UsageSummaryCardProps) {
+  const pct = limit > 0 ? Math.min((used / limit) * 100, 100) : 0;
+  const isPremium = plan === "premium";
+
   return (
-    <div className="rounded-2xl border border-slate-200/70 bg-slate-50 p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+    <div style={{ fontFamily: "'DM Sans', sans-serif" }}>
+      {/* Header row */}
+      <div
+        style={{
+          display: "flex",
+          flexWrap: "wrap",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: "12px",
+          marginBottom: "20px",
+        }}
+      >
         <div>
-          <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+          <h3
+            style={{
+              fontSize: "13.5px",
+              fontWeight: 500,
+              color: "#0f172a",
+              letterSpacing: "-0.01em",
+            }}
+          >
             Token usage
           </h3>
-          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+          <p
+            style={{
+              marginTop: "4px",
+              fontSize: "12px",
+              fontWeight: 300,
+              color: "#94a3b8",
+            }}
+          >
             Monthly run limits and remaining capacity.
           </p>
         </div>
+
+        {/* Plan badge */}
         <span
-          className={`rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-wide ${planStyles[plan]}`}
+          style={{
+            fontFamily: "'DM Sans',sans-serif",
+            fontSize: "10px",
+            fontWeight: 500,
+            letterSpacing: "0.08em",
+            textTransform: "uppercase",
+            padding: "4px 12px",
+            borderRadius: "100px",
+            border: isPremium
+              ? "1px solid rgba(52,211,153,0.25)"
+              : "1px solid rgba(0,0,0,0.08)",
+            background: isPremium
+              ? "rgba(52,211,153,0.10)"
+              : "rgba(0,0,0,0.03)",
+            color: isPremium ? "#059669" : "#64748b",
+          }}
         >
           {plan}
         </span>
       </div>
-      <div className="mt-5 grid gap-4 sm:grid-cols-2">
-        <div className="rounded-xl border border-slate-200/70 bg-slate-50 p-4 text-sm text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200">
-          <div className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">
-            Used tokens
-          </div>
-          <div className="mt-2 text-2xl font-semibold text-slate-900 dark:text-white">
-            {used} / {limit}
-          </div>
+
+      {/* Stat boxes */}
+      <div
+        className="grid gap-4 sm:grid-cols-2"
+        style={{ marginBottom: "20px" }}
+      >
+        <div
+          style={{
+            background: "rgba(255,255,255,0.55)",
+            border: "1px solid rgba(0,0,0,0.06)",
+            borderRadius: "12px",
+            padding: "16px",
+          }}
+        >
+          <p
+            style={{
+              fontSize: "10px",
+              fontWeight: 500,
+              letterSpacing: "0.10em",
+              textTransform: "uppercase",
+              color: "#94a3b8",
+            }}
+          >
+            Used
+          </p>
+          <p
+            style={{
+              marginTop: "8px",
+              fontFamily: "'Cormorant Garamond',serif",
+              fontWeight: 300,
+              fontSize: "2rem",
+              lineHeight: 1,
+              letterSpacing: "-0.02em",
+              color: "#0f172a",
+            }}
+          >
+            {used}
+            <span
+              style={{
+                fontFamily: "'DM Sans',sans-serif",
+                fontSize: "13px",
+                fontWeight: 300,
+                color: "#94a3b8",
+                marginLeft: "6px",
+              }}
+            >
+              / {limit}
+            </span>
+          </p>
         </div>
-        <div className="rounded-xl border border-slate-200/70 bg-slate-50 p-4 text-sm text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200">
-          <div className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">
+
+        <div
+          style={{
+            background: "rgba(255,255,255,0.55)",
+            border: "1px solid rgba(0,0,0,0.06)",
+            borderRadius: "12px",
+            padding: "16px",
+          }}
+        >
+          <p
+            style={{
+              fontSize: "10px",
+              fontWeight: 500,
+              letterSpacing: "0.10em",
+              textTransform: "uppercase",
+              color: "#94a3b8",
+            }}
+          >
             Remaining
-          </div>
-          <div className="mt-2 text-2xl font-semibold text-slate-900 dark:text-white">
+          </p>
+          <p
+            style={{
+              marginTop: "8px",
+              fontFamily: "'Cormorant Garamond',serif",
+              fontWeight: 300,
+              fontSize: "2rem",
+              lineHeight: 1,
+              letterSpacing: "-0.02em",
+              color: remaining <= 0 ? "#e11d48" : "#0f172a",
+            }}
+          >
             {remaining}
-          </div>
+          </p>
+        </div>
+      </div>
+
+      {/* Progress bar */}
+      <div>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            marginBottom: "6px",
+          }}
+        >
+          <span style={{ fontSize: "11px", fontWeight: 400, color: "#94a3b8" }}>
+            Usage
+          </span>
+          <span
+            style={{
+              fontSize: "11px",
+              fontWeight: 400,
+              color: pct >= 90 ? "#e11d48" : "#94a3b8",
+            }}
+          >
+            {pct.toFixed(0)}%
+          </span>
+        </div>
+        <div
+          style={{
+            height: "5px",
+            borderRadius: "100px",
+            background: "rgba(0,0,0,0.06)",
+            overflow: "hidden",
+          }}
+        >
+          <div
+            style={{
+              height: "100%",
+              borderRadius: "100px",
+              width: `${pct}%`,
+              background:
+                pct >= 90
+                  ? "linear-gradient(90deg, #e11d48, #f43f5e)"
+                  : "linear-gradient(90deg, #1d6ef5, #06b6d4, #059669)",
+              transition: "width 0.4s ease",
+            }}
+          />
         </div>
       </div>
     </div>

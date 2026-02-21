@@ -22,42 +22,123 @@ type FindingsLineChartProps = {
 export default function FindingsLineChart({ data }: FindingsLineChartProps) {
   if (data.length < 2) {
     return (
-      <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-6 text-sm text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400">
+      <div
+        style={{
+          fontFamily: "'DM Sans', sans-serif",
+          fontWeight: 300,
+          fontSize: "13px",
+          color: "#94a3b8",
+          background: "rgba(255,255,255,0.55)",
+          border: "1px dashed rgba(0,0,0,0.08)",
+          borderRadius: "16px",
+          padding: "24px",
+        }}
+      >
         Not enough historical data to show findings trend yet.
       </div>
     );
   }
 
   return (
-    <div className="rounded-2xl border border-slate-200/70 bg-slate-50 p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+    <div style={{ fontFamily: "'DM Sans', sans-serif" }}>
       <div>
-        <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+        <h3
+          style={{
+            fontSize: "13.5px",
+            fontWeight: 500,
+            color: "#0f172a",
+            letterSpacing: "-0.01em",
+          }}
+        >
           Findings trend
         </h3>
-        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+        <p
+          style={{
+            marginTop: "4px",
+            fontSize: "12px",
+            fontWeight: 300,
+            color: "#94a3b8",
+          }}
+        >
           Total findings detected over time.
         </p>
       </div>
-      <div className="mt-6 h-64">
+
+      <div style={{ marginTop: "24px", height: "256px" }}>
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={data} margin={{ top: 8, right: 16, left: 0, bottom: 8 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-            <XAxis dataKey="dateLabel" tick={{ fontSize: 12 }} />
-            <YAxis tick={{ fontSize: 12 }} allowDecimals={false} />
+          <LineChart
+            data={data}
+            margin={{ top: 8, right: 8, left: -16, bottom: 8 }}
+          >
+            <defs>
+              <linearGradient id="lineAreaGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#1d6ef5" stopOpacity={0.12} />
+                <stop offset="100%" stopColor="#1d6ef5" stopOpacity={0} />
+              </linearGradient>
+              <linearGradient
+                id="lineStrokeGradient"
+                x1="0"
+                y1="0"
+                x2="1"
+                y2="0"
+              >
+                <stop offset="0%" stopColor="#1d6ef5" />
+                <stop offset="50%" stopColor="#06b6d4" />
+                <stop offset="100%" stopColor="#059669" />
+              </linearGradient>
+            </defs>
+
+            <CartesianGrid
+              strokeDasharray="3 3"
+              stroke="rgba(0,0,0,0.05)"
+              vertical={false}
+            />
+            <XAxis
+              dataKey="dateLabel"
+              tick={{
+                fontSize: 11,
+                fill: "#94a3b8",
+                fontFamily: "'DM Sans', sans-serif",
+              }}
+              axisLine={false}
+              tickLine={false}
+            />
+            <YAxis
+              tick={{
+                fontSize: 11,
+                fill: "#94a3b8",
+                fontFamily: "'DM Sans', sans-serif",
+              }}
+              axisLine={false}
+              tickLine={false}
+              allowDecimals={false}
+            />
             <Tooltip
               contentStyle={{
-                borderRadius: "12px",
-                borderColor: "#e5e7eb",
+                fontFamily: "'DM Sans', sans-serif",
                 fontSize: "12px",
+                fontWeight: 400,
+                borderRadius: "12px",
+                border: "1px solid rgba(0,0,0,0.07)",
+                background: "rgba(255,255,255,0.92)",
+                backdropFilter: "blur(12px)",
+                boxShadow: "0 4px 16px rgba(0,0,0,0.08)",
+                color: "#0f172a",
               }}
+              labelStyle={{ fontWeight: 500, marginBottom: "4px" }}
             />
             <Line
               type="monotone"
               dataKey="findings"
-              stroke="#fbbf24"
+              stroke="url(#lineStrokeGradient)"
               strokeWidth={2}
-              dot={{ r: 3 }}
-              activeDot={{ r: 5 }}
+              dot={{ r: 3, fill: "#1d6ef5", strokeWidth: 0 }}
+              activeDot={{
+                r: 5,
+                fill: "#1d6ef5",
+                strokeWidth: 2,
+                stroke: "rgba(29,110,245,0.2)",
+              }}
             />
           </LineChart>
         </ResponsiveContainer>

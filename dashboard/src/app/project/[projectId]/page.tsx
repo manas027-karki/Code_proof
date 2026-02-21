@@ -53,45 +53,22 @@ type RiskPieChartProps = {
   totals: RiskTotals;
 };
 
-function polarToCartesian(
-  centerX: number,
-  centerY: number,
-  radius: number,
-  angleInDegrees: number,
-) {
-  const angleInRadians = ((angleInDegrees - 90) * Math.PI) / 180.0;
-
-  return {
-    x: centerX + radius * Math.cos(angleInRadians),
-    y: centerY + radius * Math.sin(angleInRadians),
-  };
+function polarToCartesian(cx: number, cy: number, r: number, deg: number) {
+  const rad = ((deg - 90) * Math.PI) / 180;
+  return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
 }
 
 function describeArc(
   x: number,
   y: number,
-  radius: number,
-  startAngle: number,
-  endAngle: number,
+  r: number,
+  start: number,
+  end: number,
 ) {
-  const start = polarToCartesian(x, y, radius, endAngle);
-  const end = polarToCartesian(x, y, radius, startAngle);
-
-  const largeArcFlag = endAngle - startAngle <= 180 ? "0" : "1";
-
-  return [
-    "M",
-    start.x,
-    start.y,
-    "A",
-    radius,
-    radius,
-    0,
-    largeArcFlag,
-    0,
-    end.x,
-    end.y,
-  ].join(" ");
+  const s = polarToCartesian(x, y, r, end);
+  const e = polarToCartesian(x, y, r, start);
+  const large = end - start <= 180 ? "0" : "1";
+  return `M ${s.x} ${s.y} A ${r} ${r} 0 ${large} 0 ${e.x} ${e.y}`;
 }
 
 function RiskPieChart({ totals }: RiskPieChartProps) {
@@ -99,130 +76,199 @@ function RiskPieChart({ totals }: RiskPieChartProps) {
 
   if (totalFindings === 0) {
     return (
-      <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-6 text-sm text-slate-500">
+      <div
+        style={{
+          fontFamily: "'DM Sans',sans-serif",
+          fontWeight: 300,
+          fontSize: "13px",
+          color: "#94a3b8",
+          background: "rgba(255,255,255,0.55)",
+          border: "1px dashed rgba(0,0,0,0.08)",
+          borderRadius: "16px",
+          padding: "24px",
+        }}
+      >
         No findings recorded yet for this project.
       </div>
     );
   }
 
-  const remaining = Math.max(
-    totalFindings - highRisk - totalWarnings,
-    0,
-  );
-
+  const remaining = Math.max(totalFindings - highRisk - totalWarnings, 0);
   const slices = [
-    { label: "High-Risk", value: highRisk, color: "#f97373" },
-    { label: "Warnings", value: totalWarnings, color: "#fbbf24" },
-    { label: "Other", value: remaining, color: "#cbd5f5" },
-  ].filter((item) => item.value > 0);
+    { label: "High-Risk", value: highRisk, color: "url(#riskGrad)" },
+    { label: "Warnings", value: totalWarnings, color: "url(#warnGrad)" },
+    { label: "Other", value: remaining, color: "rgba(0,0,0,0.08)" },
+  ].filter((s) => s.value > 0);
 
-  const total = slices.reduce((sum, item) => sum + item.value, 0);
-  const center = 60;
-  const radius = 46;
-  let currentAngle = 0;
+  const total = slices.reduce((s, i) => s + i.value, 0);
+  const cx = 60;
+  const cy = 60;
+  const r = 46;
+  let angle = 0;
 
   return (
-    <div className="flex flex-col gap-6 rounded-2xl border border-slate-200/70 bg-white p-6 shadow-sm">
-      <div className="flex flex-col gap-2">
-        <h3 className="text-sm font-semibold text-slate-900">
-          Risk distribution
-        </h3>
-        <p className="text-xs text-slate-500">
-          Breakdown of blocked, warning, and other findings for this project.
-        </p>
-      </div>
-      <div className="flex flex-wrap items-center gap-6">
-        <div className="relative h-32 w-32">
-          <svg
-            viewBox="0 0 120 120"
-            className="h-full w-full transition-transform duration-300 ease-out hover:scale-[1.03]"
+    <div
+      style={{
+        display: "flex",
+        flexWrap: "wrap",
+        alignItems: "center",
+        gap: "28px",
+      }}
+    >
+      {/* SVG donut */}
+      <div
+        style={{ position: "relative", width: 128, height: 128, flexShrink: 0 }}
+      >
+        <svg viewBox="0 0 120 120" style={{ width: "100%", height: "100%" }}>
+          <defs>
+            <linearGradient id="riskGrad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stopColor="#1d6ef5" />
+              <stop offset="100%" stopColor="#06b6d4" />
+            </linearGradient>
+            <linearGradient id="warnGrad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stopColor="#f59e0b" />
+              <stop offset="100%" stopColor="#fbbf24" stopOpacity={0.7} />
+            </linearGradient>
+          </defs>
+          <circle
+            cx={cx}
+            cy={cy}
+            r={r}
+            fill="none"
+            stroke="rgba(0,0,0,0.05)"
+            strokeWidth={10}
+          />
+          {slices.map((slice) => {
+            const sliceAngle = (slice.value / total) * 360;
+            const path = describeArc(cx, cy, r, angle, angle + sliceAngle);
+            angle += sliceAngle;
+            return (
+              <path
+                key={slice.label}
+                d={path}
+                fill="none"
+                stroke={slice.color}
+                strokeWidth={10}
+                strokeLinecap="round"
+              />
+            );
+          })}
+        </svg>
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            textAlign: "center",
+            pointerEvents: "none",
+          }}
+        >
+          <span
+            style={{
+              fontFamily: "'DM Sans',sans-serif",
+              fontSize: "9px",
+              fontWeight: 500,
+              letterSpacing: "0.10em",
+              textTransform: "uppercase",
+              color: "#94a3b8",
+            }}
           >
-            {/* Background ring */}
-            <circle
-              cx={center}
-              cy={center}
-              r={radius}
-              fill="none"
-              stroke="#e2e8f0"
-              strokeWidth={10}
-            />
-            {slices.map((slice, index) => {
-              const sliceAngle = (slice.value / total) * 360;
-              const startAngle = currentAngle;
-              const endAngle = currentAngle + sliceAngle;
-              currentAngle = endAngle;
-
-              const pathData = describeArc(
-                center,
-                center,
-                radius,
-                startAngle,
-                endAngle,
-              );
-
-              return (
-                <path
-                  key={slice.label}
-                  d={pathData}
-                  fill="none"
-                  stroke={slice.color}
-                  strokeWidth={10}
-                  className="transition-all duration-500 ease-out"
-                  strokeLinecap="round"
-                />
-              );
-            })}
-          </svg>
-          <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center">
-            <div className="text-[0.65rem] font-semibold uppercase tracking-[0.2em] text-slate-400">
-              Total findings
-            </div>
-            <div className="text-lg font-semibold text-slate-900">
-              {totalFindings}
-            </div>
-          </div>
+            Total
+          </span>
+          <span
+            style={{
+              fontFamily: "'Cormorant Garamond',serif",
+              fontWeight: 300,
+              fontSize: "1.5rem",
+              color: "#0f172a",
+              letterSpacing: "-0.02em",
+              lineHeight: 1,
+            }}
+          >
+            {totalFindings}
+          </span>
         </div>
-        <div className="flex-1 space-y-3 text-xs text-slate-600">
-          <div className="grid gap-2 sm:grid-cols-2">
-            <div className="flex items-center justify-between gap-2 rounded-xl bg-rose-50/60 px-3 py-2">
-              <span className="flex items-center gap-2">
-                <span className="h-2 w-2 rounded-full bg-rose-500" />
-                <span className="font-semibold text-rose-700">
-                  Total Blocked Commits
-                </span>
-              </span>
-              <span className="font-mono text-xs text-rose-700">
-                {totalBlocked}
-              </span>
-            </div>
-            <div className="flex items-center justify-between gap-2 rounded-xl bg-amber-50/70 px-3 py-2">
-              <span className="flex items-center gap-2">
-                <span className="h-2 w-2 rounded-full bg-amber-400" />
-                <span className="font-semibold text-amber-700">
-                  Total Warnings
-                </span>
-              </span>
-              <span className="font-mono text-xs text-amber-700">
-                {totalWarnings}
-              </span>
-            </div>
-          </div>
-          <div className="flex items-center justify-between gap-2 rounded-xl bg-slate-50 px-3 py-2">
-            <span className="flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-rose-500" />
-              <span className="font-semibold text-slate-800">
-                High-Risk Findings
-              </span>
+      </div>
+
+      {/* Legend items */}
+      <div
+        style={{
+          flex: 1,
+          minWidth: 0,
+          display: "flex",
+          flexDirection: "column",
+          gap: "8px",
+        }}
+      >
+        {[
+          {
+            label: "Blocked commits",
+            value: totalBlocked,
+            accent: "rgba(29,110,245,0.15)",
+            text: "#1d6ef5",
+          },
+          {
+            label: "Warnings",
+            value: totalWarnings,
+            accent: "rgba(245,158,11,0.12)",
+            text: "#b45309",
+          },
+          {
+            label: "High-risk findings",
+            value: highRisk,
+            accent: "rgba(0,0,0,0.04)",
+            text: "#0f172a",
+          },
+        ].map((item) => (
+          <div
+            key={item.label}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: "12px",
+              background: item.accent,
+              borderRadius: "10px",
+              padding: "8px 12px",
+            }}
+          >
+            <span
+              style={{
+                fontFamily: "'DM Sans',sans-serif",
+                fontSize: "12px",
+                fontWeight: 400,
+                color: item.text,
+              }}
+            >
+              {item.label}
             </span>
-            <span className="font-mono text-xs text-slate-700">
-              {highRisk}
+            <span
+              style={{
+                fontFamily: "'Cormorant Garamond',serif",
+                fontWeight: 300,
+                fontSize: "1.1rem",
+                color: item.text,
+                letterSpacing: "-0.01em",
+              }}
+            >
+              {item.value}
             </span>
           </div>
-          <p className="text-[0.7rem] text-slate-500">
-            Percentages are calculated out of total findings across the loaded
-            reports for this project.
-          </p>
-        </div>
+        ))}
+        <p
+          style={{
+            fontFamily: "'DM Sans',sans-serif",
+            fontSize: "11px",
+            fontWeight: 300,
+            color: "#94a3b8",
+            marginTop: "4px",
+          }}
+        >
+          Percentages calculated from total findings across loaded reports.
+        </p>
       </div>
     </div>
   );
@@ -249,95 +295,62 @@ export default function ProjectMetricsPage() {
   const [isTruncated, setIsTruncated] = useState(false);
 
   useEffect(() => {
-    if (!projectId) {
-      return;
-    }
-
+    if (!projectId) return;
     let isActive = true;
 
     const loadProject = async () => {
       setIsLoading(true);
       setError(null);
       setNotFound(false);
-
       try {
         const projectResponse = await apiFetch<ProjectResponse>(
           `/api/projects/${projectId}`,
         );
-
-        let offset = 0;
-        let total = 0;
+        let offset = 0,
+          total = 0;
         const collected: ReportSummary[] = [];
-
         while (offset < MAX_REPORTS) {
-          const reportsPage = await apiFetch<ReportsResponse>(
+          const page = await apiFetch<ReportsResponse>(
             `/api/projects/${projectId}/reports?limit=${PAGE_LIMIT}&offset=${offset}`,
           );
-
-          total = reportsPage.totalReports;
-          collected.push(...reportsPage.reports);
+          total = page.totalReports;
+          collected.push(...page.reports);
           offset += PAGE_LIMIT;
-
-          if (offset >= total || reportsPage.reports.length === 0) {
-            break;
-          }
+          if (offset >= total || page.reports.length === 0) break;
         }
-
-        if (!isActive) {
-          return;
-        }
-
+        if (!isActive) return;
         setProject(projectResponse.project);
         setReports(collected);
         setTotalReports(total);
         setIsTruncated(total > collected.length);
       } catch (err) {
-        if (!isActive) {
-          return;
-        }
-
-        if (err instanceof ApiError && err.status === 404) {
-          setNotFound(true);
-        } else {
+        if (!isActive) return;
+        if (err instanceof ApiError && err.status === 404) setNotFound(true);
+        else
           setError(
             err instanceof Error
               ? err.message
               : "Unable to load project metrics.",
           );
-        }
       } finally {
-        if (isActive) {
-          setIsLoading(false);
-        }
+        if (isActive) setIsLoading(false);
       }
     };
 
     loadProject();
-
     return () => {
       isActive = false;
     };
   }, [projectId]);
 
+  const helperSuffix = isTruncated
+    ? `Based on last ${reports.length} reports`
+    : undefined;
+
   const metrics = useMemo(() => {
-    const totalFindings = reports.reduce(
-      (sum, report) => sum + report.summary.findings,
-      0,
-    );
-    const totalBlocked = reports.reduce(
-      (sum, report) => sum + report.summary.blocks,
-      0,
-    );
-    const totalWarnings = reports.reduce(
-      (sum, report) => sum + report.summary.warnings,
-      0,
-    );
-    const highRisk = totalBlocked;
-
-    const helperSuffix = isTruncated
-      ? `Based on last ${reports.length} reports`
-      : undefined;
-
+    const totalFindings = reports.reduce((s, r) => s + r.summary.findings, 0);
+    const totalBlocked = reports.reduce((s, r) => s + r.summary.blocks, 0);
+    const totalWarnings = reports.reduce((s, r) => s + r.summary.warnings, 0);
     return [
       {
         label: "Total Findings",
@@ -358,7 +371,7 @@ export default function ProjectMetricsPage() {
       },
       {
         label: "High-Risk Findings",
-        value: highRisk.toString(),
+        value: totalBlocked.toString(),
         helper: helperSuffix,
         tone: "danger" as const,
       },
@@ -368,162 +381,373 @@ export default function ProjectMetricsPage() {
         helper: "Requires finding metadata",
       },
       {
-        label: "Dangerous Functions Detected",
+        label: "Dangerous Functions",
         value: "0",
         helper: "Requires finding metadata",
       },
     ];
-  }, [reports, isTruncated]);
+  }, [reports, helperSuffix]);
 
-  const riskTotals = useMemo<RiskTotals>(() => {
-    const totalFindings = reports.reduce(
-      (sum, report) => sum + report.summary.findings,
-      0,
-    );
-    const totalBlocked = reports.reduce(
-      (sum, report) => sum + report.summary.blocks,
-      0,
-    );
-    const totalWarnings = reports.reduce(
-      (sum, report) => sum + report.summary.warnings,
-      0,
-    );
-
-    return {
-      totalFindings,
-      totalBlocked,
-      totalWarnings,
-      highRisk: totalBlocked,
-    };
-  }, [reports]);
+  const riskTotals = useMemo<RiskTotals>(
+    () => ({
+      totalFindings: reports.reduce((s, r) => s + r.summary.findings, 0),
+      totalBlocked: reports.reduce((s, r) => s + r.summary.blocks, 0),
+      totalWarnings: reports.reduce((s, r) => s + r.summary.warnings, 0),
+      highRisk: reports.reduce((s, r) => s + r.summary.blocks, 0),
+    }),
+    [reports],
+  );
 
   const trendData = useMemo(() => {
-    if (reports.length === 0) {
-      return [];
-    }
-
-    const grouped = new Map<
-      string,
-      { reports: number; blocks: number }
-    >();
-
-    reports.forEach((report) => {
-      const date = new Date(report.timestamp);
-      if (Number.isNaN(date.getTime())) {
-        return;
-      }
-      const label = date.toLocaleDateString(undefined, {
+    const grouped = new Map<string, { reports: number; blocks: number }>();
+    reports.forEach((r) => {
+      const d = new Date(r.timestamp);
+      if (Number.isNaN(d.getTime())) return;
+      const label = d.toLocaleDateString(undefined, {
         month: "short",
         day: "numeric",
       });
-      const existing = grouped.get(label) ?? { reports: 0, blocks: 0 };
+      const ex = grouped.get(label) ?? { reports: 0, blocks: 0 };
       grouped.set(label, {
-        reports: existing.reports + 1,
-        blocks: existing.blocks + report.summary.blocks,
+        reports: ex.reports + 1,
+        blocks: ex.blocks + r.summary.blocks,
       });
     });
-
-    return Array.from(grouped.entries()).map(([dateLabel, values]) => ({
+    return Array.from(grouped.entries()).map(([dateLabel, v]) => ({
       dateLabel,
-      reports: values.reports,
-      blocks: values.blocks,
+      reports: v.reports,
+      blocks: v.blocks,
     }));
   }, [reports]);
 
+  /* ── Skeleton loader ── */
+  const SkeletonCard = () => (
+    <div
+      style={{
+        height: "160px",
+        background: "rgba(255,255,255,0.55)",
+        border: "1px dashed rgba(0,0,0,0.08)",
+        borderRadius: "16px",
+      }}
+    />
+  );
+
+  /* ── Not found ── */
   if (notFound) {
     return (
-      <main className="min-h-screen bg-slate-50 px-6 py-10">
-        <div className="mx-auto max-w-4xl rounded-2xl border border-slate-200/70 bg-white p-10 text-center shadow-sm">
-          <h1 className="text-2xl font-semibold text-slate-900">
-            Project not found
-          </h1>
-          <p className="mt-2 text-sm text-slate-600">
-            The requested project is unavailable or you do not have access.
-          </p>
-          <button
-            type="button"
-            className="mt-6 rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700"
-            onClick={() => router.push("/dashboard")}
+      <>
+        <style>{`@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;1,400&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap');`}</style>
+        <main
+          style={{
+            minHeight: "100svh",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "24px",
+            fontFamily: "'DM Sans',sans-serif",
+            background:
+              "radial-gradient(ellipse 100% 50% at 0% 0%, rgba(134,239,172,0.18) 0%, transparent 55%), radial-gradient(ellipse 70% 50% at 100% 20%, rgba(147,210,255,0.14) 0%, transparent 52%), #f8fbf9",
+          }}
+        >
+          <div
+            style={{
+              maxWidth: "480px",
+              width: "100%",
+              textAlign: "center",
+              background: "rgba(255,255,255,0.70)",
+              backdropFilter: "blur(14px)",
+              border: "1px solid rgba(0,0,0,0.07)",
+              boxShadow:
+                "0 4px 32px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.95)",
+              borderRadius: "20px",
+              padding: "40px 32px",
+            }}
           >
-            Return to dashboard
-          </button>
-        </div>
-      </main>
+            <h1
+              style={{
+                fontFamily: "'Cormorant Garamond',serif",
+                fontWeight: 300,
+                fontSize: "2rem",
+                letterSpacing: "-0.02em",
+                color: "#0f172a",
+              }}
+            >
+              Project{" "}
+              <em
+                style={{
+                  fontStyle: "italic",
+                  background: "linear-gradient(130deg,#1d6ef5,#059669)",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                }}
+              >
+                not found
+              </em>
+            </h1>
+            <p
+              style={{
+                fontFamily: "'DM Sans',sans-serif",
+                fontWeight: 300,
+                fontSize: "13px",
+                color: "#64748b",
+                marginTop: "10px",
+                lineHeight: 1.6,
+              }}
+            >
+              The requested project is unavailable or you do not have access.
+            </p>
+            <button
+              type="button"
+              onClick={() => router.push("/dashboard")}
+              style={{
+                marginTop: "24px",
+                fontFamily: "'DM Sans',sans-serif",
+                fontSize: "13px",
+                fontWeight: 500,
+                color: "#fff",
+                background: "linear-gradient(135deg,#1d6ef5,#0ea5e9)",
+                border: "none",
+                borderRadius: "100px",
+                padding: "10px 24px",
+                cursor: "pointer",
+                boxShadow: "0 4px 18px rgba(29,110,245,0.28)",
+              }}
+            >
+              Return to dashboard
+            </button>
+          </div>
+        </main>
+      </>
     );
   }
 
   return (
-    <main className="min-h-screen bg-slate-50 px-6 py-8">
-      <div className="mx-auto flex max-w-6xl flex-col gap-6">
-        {project ? (
-          <ProjectHeader
-            name={project.name}
-            repoIdentifier={project.repoIdentifier}
-            totalReports={totalReports}
-            firstScan={reports[reports.length - 1]?.timestamp ?? project.createdAt}
-            lastScan={project.lastReportAt}
-          />
-        ) : null}
+    <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap');
 
-        {error ? (
-          <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-            {error}
+        .proj-root {
+          font-family: 'DM Sans', sans-serif;
+          min-height: 100svh;
+          width: 100%;
+          overflow-x: hidden;
+          background:
+            radial-gradient(ellipse 100% 50% at 0% 0%,   rgba(134,239,172,0.18) 0%, transparent 55%),
+            radial-gradient(ellipse 70%  50% at 100% 20%, rgba(147,210,255,0.14) 0%, transparent 52%),
+            #f8fbf9;
+        }
+
+        .proj-section-title {
+          font-family: 'Cormorant Garamond', Georgia, serif;
+          font-weight: 300;
+          font-size: clamp(1.4rem, 3vw, 1.9rem);
+          line-height: 1.08;
+          letter-spacing: -0.02em;
+          color: #0f172a;
+        }
+        .proj-section-title em {
+          font-style: italic;
+          font-weight: 400;
+          background: linear-gradient(130deg, #1d6ef5 0%, #06b6d4 55%, #059669 100%);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+        }
+
+        .proj-card {
+          background: rgba(255,255,255,0.68);
+          backdrop-filter: blur(14px);
+          -webkit-backdrop-filter: blur(14px);
+          border: 1px solid rgba(0,0,0,0.07);
+          box-shadow: 0 2px 16px rgba(0,0,0,0.05), inset 0 1px 0 rgba(255,255,255,0.9);
+          border-radius: 20px;
+          padding: 28px;
+          min-width: 0;
+          box-sizing: border-box;
+        }
+
+        .proj-error {
+          background: rgba(255,241,242,0.85);
+          border: 1px solid rgba(225,29,72,0.15);
+          border-radius: 12px;
+          padding: 12px 16px;
+          font-size: 13px;
+          font-weight: 300;
+          color: #e11d48;
+        }
+
+        .proj-back-btn {
+          font-family: 'DM Sans', sans-serif;
+          font-size: 12.5px;
+          font-weight: 400;
+          color: #64748b;
+          background: rgba(255,255,255,0.75);
+          backdrop-filter: blur(10px);
+          border: 1px solid rgba(0,0,0,0.09);
+          border-radius: 100px;
+          padding: 7px 16px;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          text-decoration: none;
+        }
+        .proj-back-btn:hover {
+          background: rgba(255,255,255,1);
+          border-color: rgba(0,0,0,0.16);
+          color: #0f172a;
+        }
+
+        .proj-divider {
+          height: 1px;
+          background: rgba(0,0,0,0.06);
+        }
+      `}</style>
+
+      <main className="proj-root">
+        <div className="mx-auto flex max-w-5xl flex-col gap-6 px-0 py-20 sm:px-6">
+          {/* Back button */}
+
+          {/* Project header */}
+          {project && (
+            <ProjectHeader
+              name={project.name}
+              repoIdentifier={project.repoIdentifier}
+              totalReports={totalReports}
+              firstScan={
+                reports[reports.length - 1]?.timestamp ?? project.createdAt
+              }
+              lastScan={project.lastReportAt}
+            />
+          )}
+
+          {error && <p className="proj-error">{error}</p>}
+
+          {/* Metrics */}
+          {isLoading ? (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div
+                  key={i}
+                  style={{
+                    height: "112px",
+                    background: "rgba(255,255,255,0.55)",
+                    border: "1px dashed rgba(0,0,0,0.08)",
+                    borderRadius: "16px",
+                  }}
+                />
+              ))}
+            </div>
+          ) : (
+            <MetricsGrid items={metrics} />
+          )}
+
+          <div className="proj-divider" />
+
+          {/* Risk overview */}
+          <div className="proj-card">
+            <div style={{ marginBottom: "20px" }}>
+              <h2 className="proj-section-title">
+                Risk <em>overview</em>
+              </h2>
+              <p
+                style={{
+                  fontFamily: "'DM Sans',sans-serif",
+                  fontWeight: 300,
+                  fontSize: "13px",
+                  color: "#64748b",
+                  marginTop: "4px",
+                }}
+              >
+                How blocked commits and warnings contribute to overall findings
+                for this project.
+              </p>
+            </div>
+            {isLoading ? (
+              <SkeletonCard />
+            ) : (
+              <RiskPieChart totals={riskTotals} />
+            )}
           </div>
-        ) : null}
 
-        {isLoading ? (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {Array.from({ length: 6 }).map((_, index) => (
-              <div
-                key={index}
-                className="h-28 rounded-2xl border border-slate-200/70 bg-slate-100"
-              />
-            ))}
+          {/* Trend chart */}
+          <div className="proj-card">
+            <div style={{ marginBottom: "20px" }}>
+              <h2 className="proj-section-title">
+                <em>Historical</em> trends
+              </h2>
+              <p
+                style={{
+                  fontFamily: "'DM Sans',sans-serif",
+                  fontWeight: 300,
+                  fontSize: "13px",
+                  color: "#64748b",
+                  marginTop: "4px",
+                }}
+              >
+                Report volume and block frequency across the most recent scans.
+              </p>
+            </div>
+            {isLoading ? <SkeletonCard /> : <TrendChart data={trendData} />}
           </div>
-        ) : (
-          <MetricsGrid items={metrics} />
-        )}
 
-        <SectionCard
-          title="Risk overview"
-          description="How blocked commits and warnings contribute to overall findings for this project."
-        >
-          {isLoading ? (
-            <div className="h-40 rounded-2xl border border-slate-200/70 bg-slate-100" />
-          ) : (
-            <RiskPieChart totals={riskTotals} />
-          )}
-        </SectionCard>
-
-        <SectionCard
-          title="Historical trends"
-          description="Report volume and block frequency across the most recent scans."
-        >
-          {isLoading ? (
-            <div className="h-40 rounded-2xl border border-slate-200/70 bg-slate-100" />
-          ) : (
-            <TrendChart data={trendData} />
-          )}
-        </SectionCard>
-
-        <SectionCard
-          title="Reports"
-          description="All scans associated with this project."
-          actions={
-            isTruncated ? (
-              <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
-                Showing {reports.length} of {totalReports}
-              </span>
-            ) : null
-          }
-        >
-          {isLoading ? (
-            <div className="h-40 rounded-2xl border border-slate-200/70 bg-slate-100" />
-          ) : (
-            <ReportsTable reports={reports} />
-          )}
-        </SectionCard>
-      </div>
-    </main>
+          {/* Reports table */}
+          <div className="proj-card" style={{ padding: 0, overflow: "hidden" }}>
+            <div
+              style={{
+                padding: "24px 28px 16px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                flexWrap: "wrap",
+                gap: "12px",
+              }}
+            >
+              <div>
+                <h2
+                  className="proj-section-title"
+                  style={{ fontSize: "clamp(1.2rem,2.5vw,1.6rem)" }}
+                >
+                  All <em>reports</em>
+                </h2>
+                <p
+                  style={{
+                    fontFamily: "'DM Sans',sans-serif",
+                    fontWeight: 300,
+                    fontSize: "13px",
+                    color: "#64748b",
+                    marginTop: "4px",
+                  }}
+                >
+                  All scans associated with this project.
+                </p>
+              </div>
+              {isTruncated && (
+                <span
+                  style={{
+                    fontFamily: "'DM Sans',sans-serif",
+                    fontSize: "10px",
+                    fontWeight: 500,
+                    letterSpacing: "0.10em",
+                    textTransform: "uppercase",
+                    color: "#94a3b8",
+                  }}
+                >
+                  Showing {reports.length} of {totalReports}
+                </span>
+              )}
+            </div>
+            {isLoading ? (
+              <div style={{ padding: "0 28px 24px" }}>
+                <SkeletonCard />
+              </div>
+            ) : (
+              <ReportsTable reports={reports} />
+            )}
+          </div>
+        </div>
+      </main>
+    </>
   );
 }

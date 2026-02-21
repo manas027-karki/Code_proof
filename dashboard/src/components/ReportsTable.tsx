@@ -19,10 +19,7 @@ type ReportsTableProps = {
 
 function formatDate(value: string | Date) {
   const parsed = typeof value === "string" ? new Date(value) : value;
-  if (Number.isNaN(parsed.getTime())) {
-    return "-";
-  }
-
+  if (Number.isNaN(parsed.getTime())) return "-";
   return parsed.toLocaleString(undefined, {
     month: "short",
     day: "numeric",
@@ -32,64 +29,169 @@ function formatDate(value: string | Date) {
   });
 }
 
-function verdictVariant(verdict: string): "allow" | "warn" | "block" | "neutral" {
-  const normalized = verdict.toLowerCase();
-  if (normalized.includes("block")) {
-    return "block";
-  }
-  if (normalized.includes("warn")) {
-    return "warn";
-  }
-  if (normalized.includes("allow") || normalized.includes("pass")) {
-    return "allow";
-  }
+function verdictVariant(
+  verdict: string,
+): "allow" | "warn" | "block" | "neutral" {
+  const n = verdict.toLowerCase();
+  if (n.includes("block")) return "block";
+  if (n.includes("warn")) return "warn";
+  if (n.includes("allow") || n.includes("pass")) return "allow";
   return "neutral";
 }
 
 export default function ReportsTable({ reports }: ReportsTableProps) {
   if (reports.length === 0) {
     return (
-      <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-6 text-sm text-slate-500">
+      <div
+        style={{
+          fontFamily: "'DM Sans', sans-serif",
+          fontWeight: 300,
+          fontSize: "13px",
+          color: "#94a3b8",
+          background: "rgba(255,255,255,0.55)",
+          border: "1px dashed rgba(0,0,0,0.08)",
+          borderRadius: "16px",
+          padding: "24px",
+        }}
+      >
         No reports yet. Reports will appear after the next scan.
       </div>
     );
   }
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-slate-200/70 bg-white shadow-sm">
-      <div className="grid grid-cols-12 gap-4 border-b border-slate-100 px-6 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
-        <div className="col-span-4">Report ID</div>
-        <div className="col-span-4">Date</div>
-        <div className="col-span-2">Findings</div>
-        <div className="col-span-1">Verdict</div>
-        <div className="col-span-1 text-right">View</div>
+    <div
+      style={{
+        fontFamily: "'DM Sans', sans-serif",
+        width: "100%",
+        overflowX: "auto",
+      }}
+    >
+      {/* Header */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "minmax(0,2fr) minmax(0,2fr) 60px 80px 50px",
+          gap: "16px",
+          padding: "10px 24px",
+          borderBottom: "1px solid rgba(0,0,0,0.05)",
+          fontSize: "10px",
+          fontWeight: 500,
+          letterSpacing: "0.10em",
+          textTransform: "uppercase",
+          color: "#94a3b8",
+        }}
+      >
+        <div>Report ID</div>
+        <div>Date</div>
+        <div style={{ textAlign: "center" }}>Findings</div>
+        <div>Verdict</div>
+        <div style={{ textAlign: "right" }}>View</div>
       </div>
-      {reports.map((report) => (
+
+      {/* Rows */}
+      {reports.map((report, i) => (
         <div
           key={report.reportId}
-          className="grid grid-cols-12 items-center gap-4 border-b border-slate-100 px-6 py-4 text-sm text-slate-700 last:border-b-0"
+          style={{
+            display: "grid",
+            gridTemplateColumns: "minmax(0,2fr) minmax(0,2fr) 60px 80px 50px",
+            gap: "16px",
+            alignItems: "center",
+            padding: "13px 24px",
+            borderBottom:
+              i < reports.length - 1 ? "1px solid rgba(0,0,0,0.04)" : "none",
+            transition: "background 0.15s ease",
+          }}
+          onMouseEnter={(e) =>
+            (e.currentTarget.style.background = "rgba(29,110,245,0.03)")
+          }
+          onMouseLeave={(e) =>
+            (e.currentTarget.style.background = "transparent")
+          }
         >
-          <div className="col-span-4 font-mono text-xs text-slate-700">
+          {/* Report ID */}
+          <div
+            style={{
+              fontFamily: "'JetBrains Mono','Fira Code',monospace",
+              fontSize: "11px",
+              color: "#64748b",
+              letterSpacing: "0.02em",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            }}
+          >
             {report.reportId}
           </div>
-          <div className="col-span-4 text-slate-600">
+
+          {/* Date */}
+          <div
+            style={{
+              fontSize: "12px",
+              fontWeight: 300,
+              color: "#94a3b8",
+              whiteSpace: "nowrap",
+            }}
+          >
             {formatDate(report.timestamp)}
           </div>
-          <div className="col-span-2 text-slate-600">
-            {report.summary.findings}
+
+          {/* Findings */}
+          <div style={{ textAlign: "center" }}>
+            <span
+              style={{
+                fontFamily: "'Cormorant Garamond', serif",
+                fontWeight: 300,
+                fontSize: "1.1rem",
+                color: report.summary.findings > 0 ? "#0f172a" : "#94a3b8",
+                letterSpacing: "-0.01em",
+              }}
+            >
+              {report.summary.findings}
+            </span>
           </div>
-          <div className="col-span-1">
+
+          {/* Verdict badge */}
+          <div>
             <Badge
               label={report.summary.finalVerdict}
               variant={verdictVariant(report.summary.finalVerdict)}
             />
           </div>
-          <div className="col-span-1 text-right">
+
+          {/* View link */}
+          <div style={{ textAlign: "right" }}>
             <Link
               href={`/report/${report.reportId}`}
-              className="rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600 transition hover:border-slate-400 hover:text-slate-800"
+              style={{
+                fontFamily: "'DM Sans', sans-serif",
+                fontSize: "11px",
+                fontWeight: 500,
+                color: "#1d6ef5",
+                textDecoration: "none",
+                padding: "5px 12px",
+                borderRadius: "100px",
+                border: "1px solid rgba(29,110,245,0.20)",
+                background: "rgba(29,110,245,0.04)",
+                transition: "all 0.15s ease",
+                whiteSpace: "nowrap",
+                display: "inline-block",
+              }}
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLElement).style.background =
+                  "rgba(29,110,245,0.10)";
+                (e.currentTarget as HTMLElement).style.borderColor =
+                  "rgba(29,110,245,0.35)";
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLElement).style.background =
+                  "rgba(29,110,245,0.04)";
+                (e.currentTarget as HTMLElement).style.borderColor =
+                  "rgba(29,110,245,0.20)";
+              }}
             >
-              View
+              View →
             </Link>
           </div>
         </div>

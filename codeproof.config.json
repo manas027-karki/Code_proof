@@ -11,7 +11,7 @@
   },
   "integration": {
     "enabled": true,
-    "endpointUrl": ""
+    "endpointUrl": "https://code-proof.onrender.com/api/reports"
   },
   "severityRules": {
     "block": [],

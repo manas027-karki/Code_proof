@@ -3,11 +3,13 @@ import { UsageSnapshot } from "./usage.model";
 
 const DEFAULT_FREE_LIMIT = 20;
 
-const startOfMonth = (date: Date) =>
-  new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), 1, 0, 0, 0, 0));
+const startOfDay = (date: Date) =>
+  new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), 0, 0, 0, 0));
 
-const isSameMonth = (a: Date, b: Date) =>
-  a.getUTCFullYear() === b.getUTCFullYear() && a.getUTCMonth() === b.getUTCMonth();
+const isSameDay = (a: Date, b: Date) =>
+  a.getUTCFullYear() === b.getUTCFullYear() && 
+  a.getUTCMonth() === b.getUTCMonth() && 
+  a.getUTCDate() === b.getUTCDate();
 
 const formatDateKey = (date: Date) => date.toISOString().slice(0, 10);
 
@@ -27,11 +29,11 @@ const buildSnapshot = (user: UserDocument): UsageSnapshot => {
 
 const resetUsageIfNeeded = async (user: UserDocument): Promise<boolean> => {
   const now = new Date();
-  if (!user.resetAt || !isSameMonth(user.resetAt, now)) {
+  if (!user.resetAt || !isSameDay(user.resetAt, now)) {
     user.monthlyUsed = 0;
     user.usageHistory = [];
     user.monthlyLimit = user.monthlyLimit ?? DEFAULT_FREE_LIMIT;
-    user.resetAt = startOfMonth(now);
+    user.resetAt = startOfDay(now);
     await user.save();
     return true;
   }

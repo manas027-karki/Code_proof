@@ -160,12 +160,37 @@ export async function runCli({ args = [], cwd }) {
             writeReport({ projectRoot: gitRoot, report });
             logSuccess("Report saved locally.");
 
+<<<<<<< HEAD
             logInfo("Syncing report to server...");
             await withFailOpenIntegration(async () => {
                 // Network calls are fail-open; never affect exit codes.
                 return await sendReportToServer(report, { enabled: true });
             });
             logSuccess("Report synced to server.");
+=======
+            const integration = config?.integration || {};
+            const integrationEnabled = features.integration && Boolean(integration.enabled);
+            
+            // Always send to server in pre-commit or manual mode
+            if (integrationEnabled) {
+                logInfo("Syncing report to server...");
+                await withFailOpenIntegration(async () => {
+                    // Network calls are fail-open; never affect exit codes.
+                    const result = await sendReportToServer(report, {
+                        enabled: true,
+                        endpointUrl: integration.endpointUrl
+                    });
+                    if (result && !result.success) {
+                        logWarn(`Failed to sync report: ${result.error || "Unknown error"}`);
+                    } else {
+                        logSuccess("Report synced to server.");
+                    }
+                    return result;
+                });
+            } else {
+                reportFeatureDisabled("Integration", verbose, logInfo);
+            }
+>>>>>>> d4a22873fa5d877d36d56c721e86d972220fff9b
         }, () => {
             logWarn("Failed to process report. Continuing without blocking.");
         });
