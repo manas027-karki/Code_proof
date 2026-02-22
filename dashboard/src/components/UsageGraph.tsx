@@ -5,7 +5,6 @@ import {
   Line,
   LineChart,
   ReferenceLine,
-  ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
@@ -30,6 +29,24 @@ function formatLabel(value: string) {
   });
 }
 
+function toDateKey(value: string) {
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return value;
+  const year = parsed.getFullYear();
+  const month = String(parsed.getMonth() + 1).padStart(2, "0");
+  const day = String(parsed.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function fromDateKey(value: string) {
+  const parts = value.split("-").map(Number);
+  if (parts.length === 3 && parts.every((part) => Number.isFinite(part))) {
+    return new Date(parts[0], parts[1] - 1, parts[2]);
+  }
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? new Date() : parsed;
+}
+
 export default function UsageGraph({ usageHistory, limit }: UsageGraphProps) {
   if (!usageHistory.length) {
     return (
@@ -50,9 +67,30 @@ export default function UsageGraph({ usageHistory, limit }: UsageGraphProps) {
     );
   }
 
-  const data = [...usageHistory]
-    .sort((a, b) => a.date.localeCompare(b.date))
-    .map((entry) => ({ date: formatLabel(entry.date), runs: entry.count }));
+  const usageByDate = new Map<string, number>();
+  usageHistory.forEach((entry) => {
+    const key = toDateKey(entry.date);
+    usageByDate.set(key, (usageByDate.get(key) ?? 0) + entry.count);
+  });
+
+  const todayKey = toDateKey(new Date().toISOString());
+  const now = new Date();
+  const startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+  const endDate = fromDateKey(todayKey);
+
+  const data: { date: string; runs: number }[] = [];
+  for (
+    let current = new Date(startDate);
+    current <= endDate;
+    current.setDate(current.getDate() + 1)
+  ) {
+    const key = toDateKey(current.toISOString());
+    data.push({ date: key, runs: usageByDate.get(key) ?? 0 });
+  }
+
+  const maxUsage = 30;
+  const limitLine = limit;
+  const chartWidth = Math.max(data.length * 56, 520);
 
   return (
     <div style={{ fontFamily: "'DM Sans', sans-serif" }}>
@@ -75,15 +113,17 @@ export default function UsageGraph({ usageHistory, limit }: UsageGraphProps) {
             color: "#94a3b8",
           }}
         >
-          Daily CodeProof executions for the current month — limit {limit}.
+          Daily CodeProof executions — limit {limit} per day.
         </p>
       </div>
 
       <div style={{ marginTop: "24px", height: "256px" }}>
-        <ResponsiveContainer width="100%" height="100%">
+        <div style={{ overflowX: "auto" }}>
           <LineChart
             data={data}
-            margin={{ top: 8, right: 8, left: -16, bottom: 8 }}
+            width={chartWidth}
+            height={256}
+            margin={{ top: 8, right: 16, left: -8, bottom: 8 }}
           >
             <defs>
               <linearGradient
@@ -106,6 +146,8 @@ export default function UsageGraph({ usageHistory, limit }: UsageGraphProps) {
             />
             <XAxis
               dataKey="date"
+              ticks={data.map((entry) => entry.date)}
+              tickFormatter={formatLabel}
               tick={{
                 fontSize: 11,
                 fill: "#94a3b8",
@@ -113,6 +155,9 @@ export default function UsageGraph({ usageHistory, limit }: UsageGraphProps) {
               }}
               axisLine={false}
               tickLine={false}
+              tickMargin={8}
+              interval={0}
+              minTickGap={0}
             />
             <YAxis
               tick={{
@@ -123,6 +168,7 @@ export default function UsageGraph({ usageHistory, limit }: UsageGraphProps) {
               axisLine={false}
               tickLine={false}
               allowDecimals={false}
+              domain={[0, maxUsage]}
             />
             <Tooltip
               contentStyle={{
@@ -138,17 +184,15 @@ export default function UsageGraph({ usageHistory, limit }: UsageGraphProps) {
               }}
               labelStyle={{ fontWeight: 500, marginBottom: "4px" }}
             />
-            {/* Limit reference line — subtle rose, dashed */}
             <ReferenceLine
-              y={limit}
-              stroke="rgba(225,29,72,0.35)"
-              strokeDasharray="4 4"
-              strokeWidth={1.5}
+              y={limitLine}
+              stroke="#dc2626"
+              strokeWidth={0.5}
               label={{
-                value: `Limit (${limit})`,
+                value: `Limit (${limitLine})`,
                 position: "insideTopRight",
                 fontSize: 10,
-                fill: "rgba(225,29,72,0.55)",
+                fill: "#dc2626",
                 fontFamily: "'DM Sans', sans-serif",
               }}
             />
@@ -157,16 +201,11 @@ export default function UsageGraph({ usageHistory, limit }: UsageGraphProps) {
               dataKey="runs"
               stroke="url(#usageStrokeGradient)"
               strokeWidth={2}
-              dot={{ r: 3, fill: "#1d6ef5", strokeWidth: 0 }}
-              activeDot={{
-                r: 5,
-                fill: "#1d6ef5",
-                strokeWidth: 2,
-                stroke: "rgba(29,110,245,0.2)",
-              }}
+              dot={false}
+              activeDot={{ r: 4, fill: "#1d6ef5" }}
             />
           </LineChart>
-        </ResponsiveContainer>
+        </div>
       </div>
     </div>
   );

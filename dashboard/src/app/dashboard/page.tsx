@@ -55,11 +55,11 @@ type UsageHistoryEntry = {
 };
 
 type UsageResponse = {
-  success: boolean;
   plan: "free" | "premium";
-  limit: number;
+  dailyLimit: number;
   used: number;
   remaining: number;
+  percentage: number;
   usageHistory: UsageHistoryEntry[];
 };
 
@@ -532,14 +532,15 @@ export default function DashboardPage() {
                     <UsageSummaryCard
                       plan={usageData.plan}
                       used={usageData.used}
-                      limit={usageData.limit}
+                      limit={usageData.dailyLimit}
                       remaining={usageData.remaining}
+                      percentage={usageData.percentage}
                     />
                   </div>
                   <div className="dash-card">
                     <UsageGraph
                       usageHistory={usageData.usageHistory}
-                      limit={usageData.limit}
+                      limit={usageData.dailyLimit}
                     />
                   </div>
                 </div>

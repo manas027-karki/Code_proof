@@ -3,6 +3,7 @@ type UsageSummaryCardProps = {
   used: number;
   limit: number;
   remaining: number;
+  percentage: number;
 };
 
 export default function UsageSummaryCard({
@@ -10,8 +11,13 @@ export default function UsageSummaryCard({
   used,
   limit,
   remaining,
+  percentage,
 }: UsageSummaryCardProps) {
-  const pct = limit > 0 ? Math.min((used / limit) * 100, 100) : 0;
+  const pct = Number.isFinite(percentage)
+    ? Math.min(Math.max(percentage, 0), 100)
+    : limit > 0
+      ? Math.min((used / limit) * 100, 100)
+      : 0;
   const isPremium = plan === "premium";
 
   return (
@@ -46,7 +52,7 @@ export default function UsageSummaryCard({
               color: "#94a3b8",
             }}
           >
-            Monthly run limits and remaining capacity.
+            Daily run limits and remaining capacity.
           </p>
         </div>
 

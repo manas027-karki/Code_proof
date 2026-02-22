@@ -5,6 +5,7 @@ import { ReportModel } from "../models/report.model";
 import { FindingModel } from "../models/finding.model";
 import { getReportWithFindings, listProjectReports } from "../services/report.service";
 import { ensureUserForClientId } from "../services/auth.service";
+import { incrementDailyUsageForUser } from "../modules/usage/usage.service";
 import { logger } from "../utils/logger";
 
 class PayloadError extends Error {
@@ -231,6 +232,11 @@ export const createReportHandler = async (
   next: NextFunction
 ) => {
   try {
+    if (!req.user?.userId) {
+      res.status(401).json({ success: false, message: "Unauthorized" });
+      return;
+    }
+
     const payload = validatePayload(req.body);
     const reportId = uuidv4();
 
@@ -277,6 +283,8 @@ export const createReportHandler = async (
       projectId: payload.projectId,
       findings: payload.findings.length,
     });
+
+    await incrementDailyUsageForUser(req.user.userId);
     res.status(201).json({ success: true, reportId });
   } catch (err) {
     if (err instanceof PayloadError) {

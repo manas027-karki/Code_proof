@@ -5,8 +5,9 @@ export type UsageHistoryEntry = {
 
 export type UsageSnapshot = {
   plan: "free" | "premium";
-  limit: number;
+  dailyLimit: number;
   used: number;
   remaining: number;
+  percentage: number;
   usageHistory: UsageHistoryEntry[];
 };

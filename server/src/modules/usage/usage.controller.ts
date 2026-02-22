@@ -51,7 +51,7 @@ export const getUsageHandler = async (
 
     const snapshot = await getUsageForUser(userId);
 
-    res.status(200).json({ success: true, ...snapshot });
+    res.status(200).json({ ...snapshot });
   } catch (err) {
     const message = (err as Error).message || "Unable to fetch usage";
     if (message.includes("not found")) {

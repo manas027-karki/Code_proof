@@ -1,43 +1,69 @@
 import { UserModel, UserDocument } from "../../models/user.model";
 import { UsageSnapshot } from "./usage.model";
 
-const DEFAULT_FREE_LIMIT = 20;
-
-const startOfDay = (date: Date) =>
-  new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), 0, 0, 0, 0));
-
-const isSameDay = (a: Date, b: Date) =>
-  a.getUTCFullYear() === b.getUTCFullYear() && 
-  a.getUTCMonth() === b.getUTCMonth() && 
-  a.getUTCDate() === b.getUTCDate();
+const DEFAULT_DAILY_LIMIT = 20;
 
 const formatDateKey = (date: Date) => date.toISOString().slice(0, 10);
 
 const buildSnapshot = (user: UserDocument): UsageSnapshot => {
-  const limit = user.monthlyLimit ?? DEFAULT_FREE_LIMIT;
-  const used = user.monthlyUsed ?? 0;
+  const limit = user.dailyLimit ?? DEFAULT_DAILY_LIMIT;
+  const used = user.dailyUsed ?? 0;
   const remaining = Math.max(limit - used, 0);
+  const percentage = limit > 0 ? Math.min((used / limit) * 100, 100) : 0;
 
   return {
     plan: user.plan || "free",
-    limit,
+    dailyLimit: limit,
     used,
     remaining,
+    percentage,
     usageHistory: user.usageHistory ?? [],
   };
 };
 
 const resetUsageIfNeeded = async (user: UserDocument): Promise<boolean> => {
-  const now = new Date();
-  if (!user.resetAt || !isSameDay(user.resetAt, now)) {
-    user.monthlyUsed = 0;
-    user.usageHistory = [];
-    user.monthlyLimit = user.monthlyLimit ?? DEFAULT_FREE_LIMIT;
-    user.resetAt = startOfDay(now);
+  const todayKey = formatDateKey(new Date());
+  if (!user.usageDate || user.usageDate !== todayKey) {
+    user.dailyUsed = 0;
+    user.dailyLimit = user.dailyLimit ?? DEFAULT_DAILY_LIMIT;
+    user.usageDate = todayKey;
     await user.save();
     return true;
   }
   return false;
+};
+
+export const incrementDailyUsageForUser = async (userId: string) => {
+  const user = await UserModel.findOne({ userId });
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  await resetUsageIfNeeded(user);
+
+  const limit = user.dailyLimit ?? DEFAULT_DAILY_LIMIT;
+  const used = user.dailyUsed ?? 0;
+  const todayKey = formatDateKey(new Date());
+
+  user.dailyUsed = used + 1;
+  const entry = user.usageHistory.find((item) => item.date === todayKey);
+  if (entry) {
+    entry.count += 1;
+  } else {
+    user.usageHistory.push({ date: todayKey, count: 1 });
+  }
+
+  if (!user.usageDate || user.usageDate !== todayKey) {
+    user.usageDate = todayKey;
+  }
+
+  if (!user.dailyLimit) {
+    user.dailyLimit = limit;
+  }
+
+  await user.save();
+
+  return buildSnapshot(user);
 };
 
 export const checkAndIncrementUsage = async (clientId: string) => {
@@ -48,23 +74,12 @@ export const checkAndIncrementUsage = async (clientId: string) => {
 
   await resetUsageIfNeeded(user);
 
-  const limit = user.monthlyLimit ?? DEFAULT_FREE_LIMIT;
-  const used = user.monthlyUsed ?? 0;
+  const limit = user.dailyLimit ?? DEFAULT_DAILY_LIMIT;
+  const used = user.dailyUsed ?? 0;
 
-  if (user.plan === "free" && used >= limit) {
+  if (used >= limit) {
     return { allowed: false, ...buildSnapshot(user) };
   }
-
-  user.monthlyUsed = used + 1;
-  const todayKey = formatDateKey(new Date());
-  const entry = user.usageHistory.find((item) => item.date === todayKey);
-  if (entry) {
-    entry.count += 1;
-  } else {
-    user.usageHistory.push({ date: todayKey, count: 1 });
-  }
-
-  await user.save();
 
   return { allowed: true, ...buildSnapshot(user) };
 };

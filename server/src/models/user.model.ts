@@ -10,12 +10,17 @@ const startOfCurrentDay = () => {
   return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0, 0));
 };
 
+const todayKey = () => new Date().toISOString().slice(0, 10);
+
 export interface UserDocument extends Document {
   userId: string;
   linkedClientIds: string[];
   plan: "free" | "premium";
   monthlyLimit: number;
   monthlyUsed: number;
+  dailyLimit: number;
+  dailyUsed: number;
+  usageDate: string;
   usageHistory: UsageHistoryEntry[];
   resetAt: Date;
   createdAt: Date;
@@ -29,6 +34,9 @@ const UserSchema = new Schema<UserDocument>(
     plan: { type: String, required: true, default: "free", enum: ["free", "premium"] },
     monthlyLimit: { type: Number, required: true, default: 20 },
     monthlyUsed: { type: Number, required: true, default: 0 },
+    dailyLimit: { type: Number, required: true, default: 20 },
+    dailyUsed: { type: Number, required: true, default: 0 },
+    usageDate: { type: String, required: true, default: todayKey },
     usageHistory: {
       type: [
         {

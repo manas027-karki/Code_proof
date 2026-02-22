@@ -33,7 +33,7 @@ export const createApp = (params: { env: EnvConfig; featureFlags: FeatureFlags }
   app.use(express.json({ limit: env.requestBodyLimit }));
 
   app.use(authRouter);
-  app.use(reportRouter({ env, featureFlags }));
+  app.use(reportRouter({ env, featureFlags, jwtSecret: env.jwtSecret }));
   app.use(projectRouter({ jwtSecret: env.jwtSecret }));
   app.use(usageRouter({ jwtSecret: env.jwtSecret }));
 
