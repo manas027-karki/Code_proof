@@ -101,11 +101,82 @@ set CODEPROOF_API_BASE=http://your-server:4000/api
 
 move-secret Command
 -------------------
-Safely moves high-risk secrets to .env with backups:
+Safely moves high-confidence secrets from your source code to environment variables with automatic backups and AST-based replacement.
 
+### Features
+
+- **Smart Detection**: Scans your project using regex + AI detection engine
+- **Deterministic Naming**: Generates meaningful variable names (e.g., `OPENAI_API_KEY`, `AWS_ACCESS_KEY`)
+- **Framework Awareness**: Detects Vite, Next.js, Create React App and uses appropriate env access patterns
+- **AST-Based Replacement**: Uses proper code parsing (not string replacement) to preserve formatting
+- **Safety First**: Creates backups before any modifications
+- **Duplicate Handling**: Groups identical secrets across files into single env variables
+- **JSON Support**: Handles secrets in JSON files with template interpolation
+
+### Usage
+
+Preview changes without modifying files:
 ```bash
-codeproof move-secret --yes
+codeproof move-secret --dry-run
 ```
+
+Apply changes with confirmation:
+```bash
+codeproof move-secret
+```
+
+Apply changes without confirmation (useful for CI/CD):
+```bash
+codeproof move-secret --force
+```
+
+Show detailed output:
+```bash
+codeproof move-secret --verbose
+```
+
+### What It Does
+
+1. **Scans** your project for high-confidence secrets
+2. **Groups** duplicate secrets by value
+3. **Generates** deterministic environment variable names
+4. **Creates** a timestamped backup in `.codeproof-backup/`
+5. **Replaces** secrets with appropriate env references:
+   - Vite projects: `import.meta.env.VITE_<NAME>`
+   - Next.js (frontend): `process.env.NEXT_PUBLIC_<NAME>`
+   - React: `process.env.REACT_APP_<NAME>`
+   - Default: `process.env.<NAME>`
+6. **Updates** your `.env` file with the secret values
+7. **Ensures** `.env` and `.env.local` are in `.gitignore`
+
+### Example
+
+Before:
+```javascript
+const apiKey = "sk-1234567890abcdef";
+const dbPassword = "my-secret-password";
+```
+
+After running `codeproof move-secret`:
+```javascript
+const apiKey = process.env.OPENAI_API_KEY;
+const dbPassword = process.env.DB_PASSWORD;
+```
+
+And in `.env`:
+```bash
+OPENAI_API_KEY=sk-1234567890abcdef
+DB_PASSWORD=my-secret-password
+```
+
+### Safety Features
+
+- **Backups**: All modified files are backed up before changes
+- **Confirmation**: Requires user confirmation unless `--force` is used
+- **Dry Run**: Test what would happen without making changes
+- **Format Preservation**: AST-based replacement maintains code style
+- **No Overwrites**: Won't overwrite existing environment variables
+- **Fail-Safe**: Aborts on errors rather than corrupting files
 
 Server Setup (Required for Dashboard)
 -------------------------------------

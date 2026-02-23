@@ -4,7 +4,7 @@
 import { displayBanner } from "../ui/banner.js";
 import { formatBlock } from "../ui/formatting.js";
 
-const HELP_TEXT = `Usage: codeproof <command>
+const HELP_TEXT = `Usage: codeproof <command> [options]
 
 Commands:
   codeproof init               Initialize CodeProof in a Git repository
@@ -16,6 +16,16 @@ Commands:
   codeproof whoami             Show the local CodeProof client ID
   codeproof help               Show this help menu
   codeproof -h, --help         Show this help menu
+
+Options for move-secret:
+  --dry-run                    Preview changes without modifying files
+  --force                      Apply changes without confirmation
+  --verbose                    Show detailed output
+
+Examples:
+  codeproof move-secret --dry-run    Preview what would be changed
+  codeproof move-secret --force      Move secrets without confirmation
+  codeproof move-secret              Interactive mode with confirmation
 
 
 `;

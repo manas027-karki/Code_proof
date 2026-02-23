@@ -5,7 +5,6 @@ import { ReportModel } from "../models/report.model";
 import { FindingModel } from "../models/finding.model";
 import { getReportWithFindings, listProjectReports } from "../services/report.service";
 import { ensureUserForClientId } from "../services/auth.service";
-import { incrementDailyUsageForUser } from "../modules/usage/usage.service";
 import { logger } from "../utils/logger";
 
 class PayloadError extends Error {
@@ -284,7 +283,6 @@ export const createReportHandler = async (
       findings: payload.findings.length,
     });
 
-    await incrementDailyUsageForUser(req.user.userId);
     res.status(201).json({ success: true, reportId });
   } catch (err) {
     if (err instanceof PayloadError) {

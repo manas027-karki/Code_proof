@@ -33,7 +33,7 @@ export const checkDailyLimit = async (
     const limit = user.dailyLimit ?? 20;
     const used = user.dailyUsed ?? 0;
 
-    if (used >= limit) {
+    if (used > limit) {
       res.status(403).json({ message: "Daily run limit exceeded" });
       return;
     }

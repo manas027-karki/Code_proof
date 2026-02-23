@@ -2,33 +2,18 @@ import http from "http";
 import https from "https";
 
 const DEFAULT_API_BASE = "https://code-proof.onrender.com/api";
+const LOCAL_API_BASE = "http://localhost:4000/api";
 
-function resolveApiBase(config) {
-  const envBase = typeof process.env.CODEPROOF_API_BASE === "string"
-    ? process.env.CODEPROOF_API_BASE.trim()
-    : "";
-  if (envBase) {
-    return envBase.replace(/\/+$/, "");
+function resolveApiBase() {
+  const env = String(process.env.NODE_ENV || "").toLowerCase();
+  if (env === "development") {
+    return LOCAL_API_BASE;
   }
-
-  const endpoint = typeof config?.integration?.endpointUrl === "string"
-    ? config.integration.endpointUrl.trim()
-    : "";
-
-  if (endpoint) {
-    try {
-      const url = new URL(endpoint);
-      return `${url.origin}/api`;
-    } catch {
-      return DEFAULT_API_BASE;
-    }
-  }
-
   return DEFAULT_API_BASE;
 }
 
 export async function checkUsageOrThrow({ clientId, config }) {
-  const apiBase = resolveApiBase(config);
+  const apiBase = resolveApiBase();
   const endpoint = `${apiBase}/usage/check-and-increment`;
   const payload = JSON.stringify({ clientId });
 

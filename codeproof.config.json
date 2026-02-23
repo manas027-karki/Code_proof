@@ -11,7 +11,7 @@
   },
   "integration": {
     "enabled": true,
-    "endpointUrl": "https://code-proof.onrender.com/api/reports"
+    "endpointUrl": "http://localhost:4000/api/reports"
   },
   "severityRules": {
     "block": [],

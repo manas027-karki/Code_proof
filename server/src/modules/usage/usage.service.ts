@@ -80,6 +80,28 @@ export const checkAndIncrementUsage = async (clientId: string) => {
     return { allowed: false, ...buildSnapshot(user) };
   }
 
+  const todayKey = formatLocalDateKey(new Date());
+  user.dailyUsed = used + 1;
+  if (!user.usageHistory) {
+    user.usageHistory = [];
+  }
+  const entry = user.usageHistory.find((item) => item.date === todayKey);
+  if (entry) {
+    entry.count += 1;
+  } else {
+    user.usageHistory.push({ date: todayKey, count: 1 });
+  }
+
+  if (!user.usageDate || user.usageDate !== todayKey) {
+    user.usageDate = todayKey;
+  }
+
+  if (!user.dailyLimit) {
+    user.dailyLimit = limit;
+  }
+
+  await user.save();
+
   return { allowed: true, ...buildSnapshot(user) };
 };
 
