@@ -231,6 +231,15 @@ export const createReportHandler = async (
   next: NextFunction
 ) => {
   try {
+    // Check auth only if public reports are disabled
+    const featureFlags = (req as any).featureFlags as { enablePublicReports?: boolean } | undefined;
+    const isPublicReportsEnabled = featureFlags?.enablePublicReports ?? false;
+    
+    if (!isPublicReportsEnabled && !req.user?.userId) {
+      res.status(401).json({ success: false, message: "Unauthorized" });
+      return;
+    }
+
     const payload = validatePayload(req.body);
     const reportId = uuidv4();
 
@@ -277,6 +286,7 @@ export const createReportHandler = async (
       projectId: payload.projectId,
       findings: payload.findings.length,
     });
+
     res.status(201).json({ success: true, reportId });
   } catch (err) {
     if (err instanceof PayloadError) {

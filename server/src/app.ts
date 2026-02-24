@@ -3,6 +3,7 @@ import cors from "cors";
 import { reportRouter } from "./routes/report.routes";
 import { projectRouter } from "./routes/project.routes";
 import { authRouter } from "./routes/auth.routes";
+import { usageRouter } from "./modules/usage/usage.routes";
 import { requestSafety } from "./middlewares/requestSafety";
 import { EnvConfig } from "./config/env";
 import { FeatureFlags } from "./config/featureFlags";
@@ -21,18 +22,20 @@ export const createApp = (params: { env: EnvConfig; featureFlags: FeatureFlags }
 
   // Enable CORS for frontend
   app.use(cors({
-    origin: ["http://localhost:3000", "http://127.0.0.1:3000","*"],
+    origin: "*",
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"]
+    allowedHeaders: ["Content-Type", "Authorization"],
+    optionsSuccessStatus: 200 // Ensure preflight OPTIONS requests return status 200
   }));
 
   app.use(requestSafety(env.requestTimeoutMs));
   app.use(express.json({ limit: env.requestBodyLimit }));
 
   app.use(authRouter);
-  app.use(reportRouter({ env, featureFlags }));
+  app.use(reportRouter({ env, featureFlags, jwtSecret: env.jwtSecret }));
   app.use(projectRouter({ jwtSecret: env.jwtSecret }));
+  app.use(usageRouter({ jwtSecret: env.jwtSecret }));
 
   app.use(errorHandler);
 

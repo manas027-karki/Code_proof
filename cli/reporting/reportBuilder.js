@@ -67,14 +67,17 @@ export function buildReport({
         ? "high"
         : "low";
 
+    const codeSnippet = trimSnippet(redactSecretSnippet(finding.ruleId, finding.snippet));
+    const explanation = decision?.explanation || finding.message || "No explanation available";
+    
     return {
       ruleId: finding.ruleId,
       severity,
       confidence,
       filePath: toRelativePath(projectRoot, finding.filePath),
-      lineNumber: finding.line || null,
-      codeSnippet: trimSnippet(redactSecretSnippet(finding.ruleId, finding.snippet)),
-      explanation: decision?.explanation || finding.message || ""
+      lineNumber: finding.line || 1, // Server requires a number, default to 1 if missing
+      codeSnippet: codeSnippet || " ", // Server requires non-empty string, use space if empty
+      explanation: explanation || "No explanation available" // Server requires non-empty string
     };
   });
 

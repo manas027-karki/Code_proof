@@ -1,6 +1,6 @@
 {
   "name": "codeproof",
-  "version": "1.0.4",
+  "version": "1.3.2",
   "description": "CodeProof CLI",
   "type": "module",
   "bin": {

@@ -1,5 +1,5 @@
 {
-  "projectId": "854292b0-248d-4a71-a2ba-25c23b652afd",
+  "projectId": "6307a9cc-83fd-4f8f-95c6-2cb63c7e2026",
   "projectType": "Node",
   "scanMode": "full",
   "enforcement": "disabled",
@@ -17,5 +17,13 @@
     "block": [],
     "warn": [],
     "allow": []
+  },
+  "aiPromptScanner": {
+    "enabled": true,
+    "useGemini": true
+  },
+  "dependencyScanner": {
+    "enabled": true,
+    "includeDevDependencies": true
   }
 }

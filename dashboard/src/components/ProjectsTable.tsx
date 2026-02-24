@@ -12,15 +12,9 @@ type ProjectsTableProps = {
 };
 
 function formatDate(value?: string | Date | null) {
-  if (!value) {
-    return "-";
-  }
-
+  if (!value) return "-";
   const parsed = typeof value === "string" ? new Date(value) : value;
-  if (Number.isNaN(parsed.getTime())) {
-    return "-";
-  }
-
+  if (Number.isNaN(parsed.getTime())) return "-";
   return parsed.toLocaleDateString(undefined, {
     month: "short",
     day: "numeric",
@@ -31,38 +25,149 @@ function formatDate(value?: string | Date | null) {
 export default function ProjectsTable({ projects }: ProjectsTableProps) {
   if (projects.length === 0) {
     return (
-      <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-6 text-sm text-slate-500">
+      <div
+        style={{
+          fontFamily: "'DM Sans', sans-serif",
+          fontWeight: 300,
+          fontSize: "13px",
+          color: "#94a3b8",
+          background: "rgba(255,255,255,0.55)",
+          border: "1px dashed rgba(0,0,0,0.08)",
+          borderRadius: "16px",
+          padding: "24px",
+        }}
+      >
         No projects yet. Run CodeProof on a repo to start tracking reports.
       </div>
     );
   }
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-slate-200/70 bg-white shadow-sm">
-      <div className="grid grid-cols-12 gap-4 border-b border-slate-100 px-6 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
-        <div className="col-span-6">Project Name</div>
-        <div className="col-span-3">Reports</div>
-        <div className="col-span-2">Last Scan</div>
-        <div className="col-span-1 text-right">View</div>
+    <div
+      style={{
+        fontFamily: "'DM Sans', sans-serif",
+        width: "100%",
+        overflowX: "auto",
+      }}
+    >
+      {/* Header */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "1fr auto auto auto",
+          gap: "16px",
+          padding: "10px 24px",
+          borderBottom: "1px solid rgba(0,0,0,0.05)",
+          fontSize: "10px",
+          fontWeight: 500,
+          letterSpacing: "0.10em",
+          textTransform: "uppercase",
+          color: "#94a3b8",
+        }}
+      >
+        <div>Project</div>
+        <div style={{ textAlign: "center", minWidth: "60px" }}>Reports</div>
+        <div style={{ textAlign: "center", minWidth: "90px" }}>Last scan</div>
+        <div style={{ textAlign: "right", minWidth: "50px" }}>View</div>
       </div>
-      {projects.map((project) => (
+
+      {/* Rows */}
+      {projects.map((project, i) => (
         <div
           key={project.projectId}
-          className="grid grid-cols-12 items-center gap-4 border-b border-slate-100 px-6 py-4 text-sm text-slate-700 last:border-b-0"
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr auto auto auto",
+            gap: "16px",
+            alignItems: "center",
+            padding: "14px 24px",
+            borderBottom:
+              i < projects.length - 1 ? "1px solid rgba(0,0,0,0.04)" : "none",
+            transition: "background 0.15s ease",
+          }}
+          onMouseEnter={(e) =>
+            (e.currentTarget.style.background = "rgba(29,110,245,0.03)")
+          }
+          onMouseLeave={(e) =>
+            (e.currentTarget.style.background = "transparent")
+          }
         >
-          <div className="col-span-6 font-semibold text-slate-900">
+          {/* Name */}
+          <div
+            style={{
+              fontSize: "13px",
+              fontWeight: 500,
+              color: "#0f172a",
+              letterSpacing: "-0.01em",
+              minWidth: 0,
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            }}
+          >
             {project.name}
           </div>
-          <div className="col-span-3 text-slate-600">{project.reportCount}</div>
-          <div className="col-span-2 text-slate-600">
+
+          {/* Reports count */}
+          <div style={{ textAlign: "center", minWidth: "60px" }}>
+            <span
+              style={{
+                fontFamily: "'Cormorant Garamond', serif",
+                fontWeight: 300,
+                fontSize: "1.1rem",
+                color: "#0f172a",
+                letterSpacing: "-0.01em",
+              }}
+            >
+              {project.reportCount}
+            </span>
+          </div>
+
+          {/* Last scan */}
+          <div
+            style={{
+              textAlign: "center",
+              minWidth: "90px",
+              fontSize: "12px",
+              fontWeight: 300,
+              color: "#94a3b8",
+            }}
+          >
             {formatDate(project.lastReportAt)}
           </div>
-          <div className="col-span-1 text-right">
+
+          {/* View link */}
+          <div style={{ textAlign: "right", minWidth: "50px" }}>
             <Link
               href={`/project/${project.projectId}`}
-              className="rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600 transition hover:border-slate-400 hover:text-slate-800"
+              style={{
+                fontFamily: "'DM Sans', sans-serif",
+                fontSize: "11px",
+                fontWeight: 500,
+                color: "#1d6ef5",
+                textDecoration: "none",
+                padding: "5px 12px",
+                borderRadius: "100px",
+                border: "1px solid rgba(29,110,245,0.2)",
+                background: "rgba(29,110,245,0.04)",
+                transition: "all 0.15s ease",
+                whiteSpace: "nowrap",
+                display: "inline-block",
+              }}
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLElement).style.background =
+                  "rgba(29,110,245,0.10)";
+                (e.currentTarget as HTMLElement).style.borderColor =
+                  "rgba(29,110,245,0.35)";
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLElement).style.background =
+                  "rgba(29,110,245,0.04)";
+                (e.currentTarget as HTMLElement).style.borderColor =
+                  "rgba(29,110,245,0.20)";
+              }}
             >
-              View
+              View →
             </Link>
           </div>
         </div>

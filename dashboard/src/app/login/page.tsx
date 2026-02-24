@@ -1,119 +1,166 @@
-"use client";
+export const dynamic = "force-dynamic";
 
-import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
-import { config } from "../../lib/config";
-import { decodeJwtPayload, setToken } from "../../lib/auth";
+import { Suspense } from "react";
+import { LoginForm } from "./LoginForm";
 
-type LoginResponse = {
-  success: boolean;
-  accessToken?: string;
-  message?: string;
-};
+function LoginFormFallback() {
+  return (
+    <div
+      style={{
+        fontFamily: "'DM Sans', sans-serif",
+        background: "rgba(255,255,255,0.72)",
+        backdropFilter: "blur(20px)",
+        WebkitBackdropFilter: "blur(20px)",
+        border: "1px solid rgba(0,0,0,0.07)",
+        boxShadow:
+          "0 4px 32px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.95)",
+        width: "100%",
+        maxWidth: "420px",
+        borderRadius: "16px",
+        padding: "32px",
+        boxSizing: "border-box" as const,
+        textAlign: "center" as const,
+      }}
+    >
+      {/* Logo mark */}
+      <div
+        style={{
+          width: 32,
+          height: 32,
+          borderRadius: 9,
+          background: "linear-gradient(135deg, #1d6ef5 0%, #059669 100%)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          boxShadow: "0 3px 12px rgba(29,110,245,0.35)",
+          margin: "0 auto 16px",
+        }}
+      >
+        <svg width="16" height="16" viewBox="0 0 12 12" fill="none">
+          <path
+            d="M6 1L8 4.5H11L8.5 6.8 9.5 10.5 6 8.2 2.5 10.5 3.5 6.8 1 4.5H4L6 1Z"
+            fill="white"
+            fillOpacity="0.9"
+          />
+        </svg>
+      </div>
+      <p
+        style={{
+          fontFamily: "'Cormorant Garamond',serif",
+          fontWeight: 300,
+          fontSize: "2rem",
+          letterSpacing: "-0.02em",
+          color: "#0f172a",
+        }}
+      >
+        Client{" "}
+        <em
+          style={{
+            fontStyle: "italic",
+            fontWeight: 400,
+            background:
+              "linear-gradient(130deg,#1d6ef5 0%,#06b6d4 55%,#059669 100%)",
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
+          }}
+        >
+          login
+        </em>
+      </p>
+      <p
+        style={{
+          fontFamily: "'DM Sans',sans-serif",
+          fontWeight: 300,
+          fontSize: "13px",
+          color: "#94a3b8",
+          marginTop: "8px",
+        }}
+      >
+        Loading…
+      </p>
+    </div>
+  );
+}
 
 export default function LoginPage() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const [clientId, setClientId] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const nextPath = searchParams.get("next") ?? "/dashboard";
-
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setError(null);
-
-    if (!clientId.trim()) {
-      setError("Client ID is required.");
-      return;
-    }
-
-    setIsSubmitting(true);
-
-    try {
-      console.log("first")
-      const response = await fetch(
-        new URL("/api/auth/login", config.apiUrl).toString(),
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ clientId: clientId.trim() }),
-        },
-      );
-
-      console.log("second")
-      console.log(response);
-
-      const rawText = await response.text();
-      const data = rawText ? (JSON.parse(rawText) as LoginResponse & { error?: string }) : null;
-
-      if (!response.ok || !data?.accessToken) {
-        const message = data?.message ?? data?.error ?? rawText ?? "Login failed. Please try again.";
-        setError(message);
-        console.error("Login failed", { status: response.status, body: rawText });
-        return;
-      }
-
-      const payload = decodeJwtPayload(data.accessToken);
-      const expires = payload?.exp
-        ? new Date(payload.exp * 1000)
-        : undefined;
-
-      setToken(data.accessToken, expires ? { expires } : undefined);
-      router.replace(nextPath);
-    } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Login failed. Please try again.",
-      );
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
   return (
-    <main className="flex min-h-screen items-center justify-center bg-slate-50 px-6">
-      <div className="w-full max-w-md rounded-2xl border border-slate-200/70 bg-white p-8 shadow-sm">
-        <div className="text-center">
-          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">
-            CodeProof
-          </p>
-          <h1 className="mt-3 text-2xl font-semibold text-slate-900">
-            Client login
-          </h1>
-          <p className="mt-2 text-sm text-slate-600">
-            Enter your clientId to access the security dashboard.
-          </p>
-        </div>
-        <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
-          <label className="block text-sm font-semibold text-slate-700">
-            Client ID (UUID)
-            <input
-              type="text"
-              name="clientId"
-              value={clientId}
-              onChange={(event) => setClientId(event.target.value)}
-              placeholder="550e8400-e29b-41d4-a716-446655440000"
-              className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-slate-400 focus:outline-none"
-              autoComplete="off"
-            />
-          </label>
-          {error ? (
-            <p className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
-              {error}
-            </p>
-          ) : null}
-          <button
-            type="submit"
-            className="w-full rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-70"
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? "Signing in..." : "Sign in"}
-          </button>
-        </form>
-      </div>
-    </main>
+    <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap');
+
+        .login-page {
+          min-height: 100svh;
+          width: 100%;
+          overflow: hidden;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 24px;
+          box-sizing: border-box;
+          background:
+            radial-gradient(ellipse 140% 90% at 15% -30%, rgba(134,239,172,0.38) 0%, transparent 55%),
+            radial-gradient(ellipse 90% 70% at 85% 5%,   rgba(147,210,255,0.30) 0%, transparent 52%),
+            radial-gradient(ellipse 70% 60% at 50% 110%, rgba(196,181,253,0.18) 0%, transparent 60%),
+            #f8fbf9;
+        }
+
+        @keyframes floatA {
+          0%,100% { transform: translateY(0px) scale(1); }
+          50%      { transform: translateY(-12px) scale(1.03); }
+        }
+        @keyframes floatB {
+          0%,100% { transform: translateY(0px) scale(1); }
+          50%      { transform: translateY(10px) scale(0.97); }
+        }
+
+        .login-orb {
+          position: fixed;
+          border-radius: 50%;
+          filter: blur(72px);
+          pointer-events: none;
+        }
+        .login-orb-a { animation: floatA 9s ease-in-out infinite; }
+        .login-orb-b { animation: floatB 11s ease-in-out infinite; }
+        .login-orb-c { animation: floatA 13s ease-in-out infinite 2s; }
+      `}</style>
+
+      <main className="login-page">
+        {/* Floating orbs — same as hero */}
+        <div
+          className="login-orb login-orb-a"
+          style={{
+            width: 380,
+            height: 380,
+            top: "-80px",
+            left: "-60px",
+            background: "rgba(134,239,172,0.26)",
+          }}
+        />
+        <div
+          className="login-orb login-orb-b"
+          style={{
+            width: 260,
+            height: 260,
+            top: "40px",
+            right: "-50px",
+            background: "rgba(147,210,255,0.22)",
+          }}
+        />
+        <div
+          className="login-orb login-orb-c"
+          style={{
+            width: 200,
+            height: 200,
+            bottom: "0",
+            left: "35%",
+            background: "rgba(196,181,253,0.16)",
+          }}
+        />
+
+        <Suspense fallback={<LoginFormFallback />}>
+          <LoginForm />
+        </Suspense>
+      </main>
+    </>
   );
 }
