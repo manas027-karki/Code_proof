@@ -3,45 +3,58 @@ from fastapi import FastAPI, Body
 import numpy as np
 import pandas as pd
 import pickle
-import nltk
-from nltk.tokenize import word_tokenize
 from fastapi import HTTPException
 
-
 app = FastAPI()
-pickle_in = open("model.pkl", "rb")
-model = pickle.load(pickle_in)
 
-pickle_in_2 = open("vectorizer.pkl", "rb")
-vectorizer = pickle.load(pickle_in_2)
+# load model
+with open("model.pkl", "rb") as f:
+    model = pickle.load(f)
+
+with open("vectorizer.pkl", "rb") as f:
+    vectorizer = pickle.load(f)
+
 
 @app.post('/predict')
-def API_Risk(text: str = Body(...,
+def Sceret_Scan(text: str = Body(...,
         media_type="text/plain",
         title="Enter Text",
         description="Paste your message here"
     )
 ):
-    
-    text = text.split()
 
-    for i in text:
-        textv = vectorizer.transform([i]).toarray()
-        result = model.predict(textv)
+    words = text.split()
 
-        if result[0] == 2:
-            return {"found" : True,
+    for word in words:
+
+        vec = vectorizer.transform([word])  # no toarray() needed
+        probs = model.predict_proba(vec)[0]  # probabilities
+        pred = model.predict(vec)[0]         # predicted class
+
+        confidence = round(float(max(probs)) * 100, 2)
+
+        if pred == 2:
+            return {
+                "found": True,
                 "risk": "Critical",
-                "secret" : i}
+                "secret": word,
+                "confidence": confidence
+            }
 
-        if result[0] == 1:
-            return {"found" : True,
+        if pred == 1:
+            return {
+                "found": True,
                 "risk": "High Risk",
-                "secret" : i}
+                "secret": word,
+                "confidence": confidence
+            }
 
-    return {"found" : False,
-        "risk": "No Risk"}
+    return {
+        "found": False,
+        "risk": "No Risk",
+        "confidence": confidence
+    }
 
 
 if __name__ == '__main__':
-    uvicorn.run(app, host = '127.0.0.1', port = 8000)   
+    uvicorn.run(app, host='127.0.0.1', port=8000)

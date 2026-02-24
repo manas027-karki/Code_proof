@@ -13,7 +13,8 @@ export async function runWhoAmI() {
   logInfo(clientId);
   logInfo("");
   logInfo("Use this ID to log in at:");
-  logInfo("https://your-dashboard-url.com/login");
+  logInfo("https://code-proof.vercel.app/login?next=%2Fdashboard");
+  logInfo("https://code-proof.vercel.app/login?next=%2Fdashboard");
   logInfo("");
   logInfo(`Config: ${getGlobalConfigPath()}`);
 }

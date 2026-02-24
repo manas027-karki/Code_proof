@@ -13,6 +13,9 @@ import { sendReportToServer } from "../utils/apiClient.js";
 import { resolveFeatureFlags, isVerbose } from "../core/featureFlags.js";
 import { getClientId } from "../core/identity.js";
 import { getEnforcementState } from "../core/enforcement.js";
+import { checkUsageOrThrow } from "../core/usageCheck.js";
+import { scanAiPrompts } from "../scanners/aiPromptScanner.js";
+import { scanDependencies } from "../scanners/dependencyScanner.js";
 import {
     reportFeatureDisabled,
     warnExperimentalOnce,
@@ -67,6 +70,22 @@ export async function runCli({ args = [], cwd }) {
         process.exit(1);
     }
 
+    const clientId = getClientId();
+    try {
+        const usage = await checkUsageOrThrow({ clientId, config });
+        if (!usage.allowed) {
+            const limit = usage.limit ?? 50;
+            const used = usage.used ?? limit;
+            logError(`Free limit reached (${used}/${limit} runs/month).`);
+            logError("Upgrade to premium to continue.");
+            process.exit(1);
+        }
+    } catch (error) {
+        logError("Usage check failed. Unable to reach CodeProof server.");
+        logError(error?.message || "Usage enforcement failed.");
+        process.exit(1);
+    }
+
     const scanMode = String(config.scanMode).toLowerCase();
     let targets = [];
 
@@ -117,6 +136,34 @@ export async function runCli({ args = [], cwd }) {
         aiDecisions
     });
 
+    // Run AI Prompt Injection & Supply-Chain Scanner (non-blocking, warnings only)
+    let aiPromptScan = null;
+    try {
+        const aiPromptEnabled = config?.aiPromptScanner?.enabled !== false;
+        if (aiPromptEnabled) {
+            aiPromptScan = await scanAiPrompts({ gitRoot, config });
+        }
+    } catch (error) {
+        logWarn("AI Prompt Injection & Supply-Chain Scanner failed. Continuing without blocking.");
+        if (error?.message) {
+            logWarn(error.message);
+        }
+    }
+
+    // Run Dependency Risk & Supply Chain Scanner (non-blocking, warnings only)
+    let dependencyScan = null;
+    try {
+        const depEnabled = config?.dependencyScanner?.enabled !== false;
+        if (depEnabled) {
+            dependencyScan = await scanDependencies({ gitRoot, config });
+        }
+    } catch (error) {
+        logWarn("Dependency Risk & Supply Chain Scanner failed. Continuing without blocking.");
+        if (error?.message) {
+            logWarn(error.message);
+        }
+    }
+
     if (features.reporting) {
         await withFailOpenReporting(async () => {
             const timestamp = new Date().toISOString();
@@ -138,6 +185,25 @@ export async function runCli({ args = [], cwd }) {
                 aiReviewed,
                 timestamp
             });
+            // Additive: attach supply-chain scanner results for local reports and future server support.
+            report.supplyChain = {
+                aiPrompt: aiPromptScan
+                    ? {
+                        filesScanned: aiPromptScan.filesScanned,
+                        risksFound: aiPromptScan.risksFound,
+                        scoreImpact: aiPromptScan.scoreImpact
+                    }
+                    : { skipped: true },
+                dependencies: dependencyScan
+                    ? {
+                        dependenciesScanned: dependencyScan.dependenciesScanned,
+                        deprecated: dependencyScan.deprecatedCount,
+                        outdated: dependencyScan.outdatedCount,
+                        scoreImpact: dependencyScan.scoreImpact,
+                        skipped: Boolean(dependencyScan.skipped)
+                    }
+                    : { skipped: true }
+            };
             // Report is saved to file and sent to server regardless of findings
             logInfo("Saving report to file...");
             writeReport({ projectRoot: gitRoot, report });
@@ -151,12 +217,17 @@ export async function runCli({ args = [], cwd }) {
                 logInfo("Syncing report to server...");
                 await withFailOpenIntegration(async () => {
                     // Network calls are fail-open; never affect exit codes.
-                    return await sendReportToServer(report, {
+                    const result = await sendReportToServer(report, {
                         enabled: true,
                         endpointUrl: integration.endpointUrl
                     });
+                    if (result && !result.success) {
+                        logWarn(`Failed to sync report: ${result.error || "Unknown error"}`);
+                    } else {
+                        logSuccess("Report synced to server.");
+                    }
+                    return result;
                 });
-                logSuccess("Report synced to server.");
             } else {
                 reportFeatureDisabled("Integration", verbose, logInfo);
             }
@@ -220,6 +291,76 @@ export async function runCli({ args = [], cwd }) {
                 logWarn(`    Fix: ${decision.suggestedFix}`);
             }
             logWarn("");
+        }
+    }
+
+    // Render AI Prompt / Markdown supply-chain scan results
+    if (aiPromptScan) {
+        const { filesScanned, risksFound, results, scoreImpact } = aiPromptScan;
+        logInfo("\nAI Prompt Injection & Supply-Chain Scanner");
+        logInfo("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+        logInfo(`Files scanned for AI prompts & markdown: ${filesScanned}`);
+        logInfo(`Files with detected risks: ${risksFound}`);
+
+        for (const entry of results) {
+            const relative = path.relative(gitRoot, entry.filePath) || entry.filePath;
+            logWarn("⚠ AI Prompt Risk Detected");
+            logWarn(`File: ${relative}`);
+            logWarn(`Risk: ${entry.riskLevel}`);
+            if (entry.reasons && entry.reasons.length > 0) {
+                logWarn("Reasons:");
+                for (const reason of entry.reasons) {
+                    logWarn(`  • ${reason}`);
+                }
+            }
+            if (entry.recommendation) {
+                logWarn("Recommendation:");
+                logWarn(`  ${entry.recommendation}`);
+            } else {
+                logWarn("Recommendation:");
+                logWarn("  Review AI instruction files before trusting automated tools.");
+            }
+            logWarn("");
+        }
+
+        if (results.length === 0) {
+            logSuccess("No suspicious AI prompt or markdown instructions detected.");
+        } else {
+            logInfo(`AI prompt security score impact: ${scoreImpact}`);
+        }
+    }
+
+    // Render dependency scan results
+    if (dependencyScan) {
+        if (dependencyScan.skipped) {
+            // Silent skip to avoid noise in repos without package.json
+        } else {
+            logInfo("\nDependency Risk & Supply Chain Scanner");
+            logInfo("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+            logInfo(`Dependencies scanned: ${dependencyScan.dependenciesScanned}`);
+            logInfo(`Deprecated: ${dependencyScan.deprecatedCount}`);
+            logInfo(`Outdated: ${dependencyScan.outdatedCount}`);
+
+            for (const entry of dependencyScan.results) {
+                logWarn("⚠ Dependency Risk Detected");
+                logWarn(`Package: ${entry.package}`);
+                logWarn(`Current: ${entry.current}`);
+                logWarn(`Latest: ${entry.latest}`);
+                logWarn(`Status: ${entry.status}`);
+                if (entry.deprecatedMessage) {
+                    logWarn("Deprecated message:");
+                    logWarn(`  ${entry.deprecatedMessage}`);
+                }
+                logWarn("Recommendation:");
+                logWarn(`  ${entry.recommendation}`);
+                logWarn("");
+            }
+
+            if (dependencyScan.results.length === 0) {
+                logSuccess("No deprecated or major-outdated dependencies detected.");
+            } else {
+                logInfo(`Dependency security score impact: ${dependencyScan.scoreImpact}`);
+            }
         }
     }
 

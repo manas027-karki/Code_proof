@@ -5,12 +5,16 @@ import { logInfo, logSuccess, logWarn } from "../utils/logger.js";
 import { detectProjectType } from "../utils/projectType.js";
 import { installPreCommitHook } from "../hooks/preCommit.js";
 import { showWelcomeScreen } from "../ui/welcomeScreen.js";
+import { displayBanner } from "../ui/banner.js";
 import { getClientId } from "../core/identity.js";
 import { randomUUID } from "crypto";
 
 
 
 export async function runInit({ cwd }) {
+  // Display banner at the start of initialization
+  displayBanner();
+  
   logInfo("Initializing CodeProof...");
 
   getClientId();
@@ -51,6 +55,14 @@ export async function runInit({ cwd }) {
       projectType,
       scanMode: "staged",
       enforcement: "enabled",
+      aiPromptScanner: {
+        enabled: true,
+        useGemini: true
+      },
+      dependencyScanner: {
+        enabled: true,
+        includeDevDependencies: true
+      },
       features: {
         reporting: true,
         integration: false,
@@ -59,7 +71,7 @@ export async function runInit({ cwd }) {
       },
       integration: {
         enabled: false,
-        endpointUrl: ""
+        endpointUrl: "https://code-proof.onrender.com/api/reports"
       },
       severityRules: {
         block: [],
@@ -81,6 +93,60 @@ export async function runInit({ cwd }) {
     }
   } catch {
     logWarn("Unable to update enforcement in codeproof.config.json.");
+  }
+
+  // Add AI prompt scanner config defaults (non-breaking additive update)
+  try {
+    const raw = fs.readFileSync(configPath, "utf8");
+    const existing = JSON.parse(raw);
+    if (typeof existing.aiPromptScanner !== "object" || existing.aiPromptScanner === null) {
+      existing.aiPromptScanner = { enabled: true, useGemini: true };
+      fs.writeFileSync(configPath, JSON.stringify(existing, null, 2) + "\n", "utf8");
+      logSuccess("Added aiPromptScanner defaults to codeproof.config.json");
+    } else {
+      let updated = false;
+      if (typeof existing.aiPromptScanner.enabled !== "boolean") {
+        existing.aiPromptScanner.enabled = true;
+        updated = true;
+      }
+      if (typeof existing.aiPromptScanner.useGemini !== "boolean") {
+        existing.aiPromptScanner.useGemini = true;
+        updated = true;
+      }
+      if (updated) {
+        fs.writeFileSync(configPath, JSON.stringify(existing, null, 2) + "\n", "utf8");
+        logSuccess("Updated aiPromptScanner defaults in codeproof.config.json");
+      }
+    }
+  } catch {
+    logWarn("Unable to update aiPromptScanner in codeproof.config.json.");
+  }
+
+  // Add dependency scanner config defaults (non-breaking additive update)
+  try {
+    const raw = fs.readFileSync(configPath, "utf8");
+    const existing = JSON.parse(raw);
+    if (typeof existing.dependencyScanner !== "object" || existing.dependencyScanner === null) {
+      existing.dependencyScanner = { enabled: true, includeDevDependencies: true };
+      fs.writeFileSync(configPath, JSON.stringify(existing, null, 2) + "\n", "utf8");
+      logSuccess("Added dependencyScanner defaults to codeproof.config.json");
+    } else {
+      let updated = false;
+      if (typeof existing.dependencyScanner.enabled !== "boolean") {
+        existing.dependencyScanner.enabled = true;
+        updated = true;
+      }
+      if (typeof existing.dependencyScanner.includeDevDependencies !== "boolean") {
+        existing.dependencyScanner.includeDevDependencies = true;
+        updated = true;
+      }
+      if (updated) {
+        fs.writeFileSync(configPath, JSON.stringify(existing, null, 2) + "\n", "utf8");
+        logSuccess("Updated dependencyScanner defaults in codeproof.config.json");
+      }
+    }
+  } catch {
+    logWarn("Unable to update dependencyScanner in codeproof.config.json.");
   }
 
   installPreCommitHook(gitRoot);

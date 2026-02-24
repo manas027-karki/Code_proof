@@ -1,2 +1,2 @@
 ///////////
-API_KEY = "hbhdhvfjbjsbdsydebhsbd"
+API_KEY = process.env.API_KEY

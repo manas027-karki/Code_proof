@@ -1,51 +1,72 @@
-# API Risk
-This project implements a Machine Learning–based Risk Classification API using Python.
-It analyzes raw text input such as logs, messages, or code snippets and classifies the content into Critical, High Risk, or No Risk categories through a deployed REST API.
-## Project Overview
-This is an end-to-end Machine Learning and API deployment project that demonstrates how a trained NLP model can be exposed as a web service.
-The system uses a trained classification model to evaluate incoming text in real time and determine the associated risk level based on learned patterns.
-<br>
-## Dataset
-The model is trained on a text-based risk classification dataset, where each data sample is labeled according to its severity level.
+<h1>SecretScan — API Secret Detector</h1>
 
-During preprocessing:
+<div class="section">
+<div class="card">
+Engineered a machine learning–based security detection system that scans source code snippets to identify exposed API keys, tokens, and confidential credentials. Designed to prevent accidental secret leakage in repositories and reduce automated exploitation risks. Implemented a lightweight classification pipeline using TF-IDF feature extraction and Logistic Regression to proactively flag sensitive tokens.
+</div>
+</div>
 
-Text is cleaned and normalized
-Input is tokenized using whitespace-based tokenization
+<div class="section">
+<h2>Dataset & Preprocessing</h2>
+<ul>
+<li>Trained on labeled text-based risk classification dataset</li>
+<li>Each sample annotated according to severity level</li>
+<li>Text cleaning and normalization applied</li>
+<li>Whitespace-based tokenization</li>
+<li>Label Encoding:
+    <ul>
+        <li><strong>No Risk → 0</strong></li>
+        <li><strong>High Risk → 1</strong></li>
+        <li><strong>Critical → 2</strong></li>
+    </ul>
+</li>
+</ul>
+</div>
 
-Labels are encoded as:
-- No Risk → 0
-- High Risk → 1
-- Critical → 2
-<br>
+<div class="section">
+<h2>Core Technical Implementation</h2>
+<ul>
+<li>Character and token-level statistical pattern recognition</li>
+<li>TF-IDF numerical feature representation</li>
+<li>Logistic Regression classifier for fast inference</li>
+<li>Sparse feature optimization</li>
+<li>Deterministic prediction outputs</li>
+</ul>
+</div>
 
-## Model & Accuracy
-The classification model is implemented using Logistic Regression, a widely used algorithm for text-based classification tasks.
+<div class="section">
+<h2>Technologies Used</h2>
+<ul>
+<li>Python</li>
+<li>Scikit-learn (TF-IDF, Logistic Regression, Evaluation)</li>
+<li>Pandas (Data Processing)</li>
+<li>NumPy (Numerical Computation)</li>
 
-Key features:
+</ul>
+</div>
 
-- Text data is converted into numerical form using TF-IDF Vectorization
+<div class="section">
+<h2>Performance Strengths</h2>
+<ul>
+<li>Lightweight architecture</li>
+<li>Real-time detection capability</li>
+<li>Low computational overhead</li>
 
-- Each token is evaluated individually
+</ul>
+</div>
 
-- Final prediction follows a priority-based decision logic:
+<div class="section">
+<h2>Example Detection</h2>
+<pre>
+Input:
+api_key = "ABCD1234XYZ"
 
-- If any token is classified as Critical, the overall result is Critical
+Output:
+Risk Level → High
+</pre>
+</div>
 
-- If no Critical token is found but any token is High Risk, the result is High Risk
 
-- If no risky tokens are detected, the result is No Risk
-<br>
 
-## Technologies Used
-- Python
-
-- Scikit-learn (TF-IDF Vectorization, Logistic Regression, Model Evaluation)
-
-- NLTK (for optional text preprocessing)
-
-- Pandas (data handling)
-
-- NumPy
 
 

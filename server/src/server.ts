@@ -3,6 +3,7 @@ import { connectToDatabase } from "./config/db";
 import { loadEnv } from "./config/env";
 import { buildFeatureFlags } from "./config/featureFlags";
 import { logger } from "./utils/logger";
+import { scheduleDailyUsageReset } from "./modules/usage/usage.reset";
 
 /**
  * Server bootstrap entrypoint.
@@ -13,6 +14,8 @@ const startServer = async () => {
   const featureFlags = buildFeatureFlags(env);
 
   await connectToDatabase(env.mongoUri);
+
+  scheduleDailyUsageReset();
 
   const app = createApp({ env, featureFlags });
   app.listen(env.port, () => {
